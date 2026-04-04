@@ -40,37 +40,34 @@
 			<section class="grid">
 				<article class="card">
 					<h2>Customer Actions</h2>
-					<p class="subtitle">For regular users submitting data and redeeming vouchers.</p>
+					<p class="subtitle">Connect wallet, view balance, approve spending, and redeem vouchers.</p>
 				</article>
 
 				<article class="card">
-					<h2>Admin / Reviewer Actions</h2>
-					<p class="subtitle">For reviewer and manager role accounts only.</p>
+					<h2>Admin Actions</h2>
+					<p class="subtitle">For operator and manager role accounts only.</p>
 				</article>
 
 				<article class="card">
-					<h2>Submit Data</h2>
-					<form id="submitDataForm" class="form-stack">
+					<h2>Monthly Data Conversion (Operator)</h2>
+					<form id="runConversionForm" class="form-stack">
+						<label>
+							User Wallet Address
+							<input id="conversionUser" type="text" placeholder="0x..." required />
+						</label>
+						<label>
+							Unused Data (MB)
+							<input id="unusedMb" type="number" min="1" step="1" placeholder="1490" required />
+						</label>
+						<label>
+							Billing Month
+							<input id="billingMonth" type="text" placeholder="2026-04" required />
+						</label>
 						<label>
 							Data URI
-							<input id="dataUri" type="text" placeholder="ipfs://example-hash" required />
+							<input id="conversionDataUri" type="text" placeholder="ipfs://billing-proof" required />
 						</label>
-						<button type="submit" class="btn">Submit</button>
-					</form>
-				</article>
-
-				<article class="card">
-					<h2>Approve Submission (Reviewer)</h2>
-					<form id="approveSubmissionForm" class="form-stack">
-						<label>
-							Submission ID
-							<input id="submissionId" type="number" min="0" placeholder="0" required />
-						</label>
-						<label>
-							Reward (DTT)
-							<input id="approveRewardAmount" type="number" min="0" step="0.0001" placeholder="10" required />
-						</label>
-						<button type="submit" class="btn">Approve + Reward</button>
+						<button type="submit" class="btn">Run Monthly Conversion</button>
 					</form>
 				</article>
 

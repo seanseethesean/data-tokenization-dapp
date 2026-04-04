@@ -3,104 +3,92 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-interface IDataToken { // so solidity knows the address has a mint function
+interface IDataToken {
     function mint(address to, uint256 amount) external;
 }
 
 /// @title DataRewards
-/// @notice Accepts data submissions and lets reviewers approve them for token rewards.
+/// @notice Converts verified unused data from billing records into reward tokens.
 contract DataRewards is AccessControl {
-    bytes32 public constant REVIEWER_ROLE = keccak256("REVIEWER_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
-    struct Submission {
+    struct Conversion {
         uint256 id;
-        address submitter;
-        string dataURI;
+        address user;
+        uint256 unusedMb;
         uint256 rewardAmount;
-        bool approved;
-        bool rewarded;
+        string billingMonth;
+        string dataURI;
+        uint256 timestamp;
     }
 
     IDataToken public dataToken;
-    uint256 public nextSubmissionId;
+    uint256 public nextConversionId;
+    uint256 public mbPerToken;
 
-    mapping(uint256 => Submission) public submissions;
-    mapping(bytes32 => bool) public usedDataHashes;
+    mapping(uint256 => Conversion) public conversions;
+    mapping(bytes32 => bool) public processedMonths;
 
-    event DataSubmitted(
-        uint256 indexed submissionId,
-        address indexed submitter,
+    event DataConverted(
+        uint256 indexed conversionId,
+        address indexed user,
+        uint256 unusedMb,
+        uint256 rewardAmount,
+        string billingMonth,
         string dataURI
     );
 
-    event DataApproved(
-        uint256 indexed submissionId,
-        address indexed reviewer,
-        address indexed submitter,
-        uint256 rewardAmount
-    );
-
     event RewardTokenUpdated(address indexed oldToken, address indexed newToken);
+    event ConversionRateUpdated(uint256 oldMbPerToken, uint256 newMbPerToken);
 
-    constructor(address tokenAddress, address admin) {
+    constructor(address tokenAddress, address admin, uint256 _mbPerToken) {
         require(tokenAddress != address(0), "Invalid token address");
         require(admin != address(0), "Invalid admin");
+        require(_mbPerToken > 0, "Invalid conversion rate");
 
         dataToken = IDataToken(tokenAddress);
+        mbPerToken = _mbPerToken;
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(REVIEWER_ROLE, admin);
+        _grantRole(OPERATOR_ROLE, admin);
     }
 
-    /// @notice Submit data for review. Duplicate URIs are blocked in this demo.
-    /// @dev Reward amount is intentionally set by reviewer/admin at approval time.
-    function submitData(string calldata dataURI) external {
+    /// @notice Convert verified unused MB into reward tokens for one user and billing month.
+    /// @dev Reward formula uses integer division and rounds down.
+    function convertUnusedData(
+        address user,
+        uint256 unusedMb,
+        string calldata billingMonth,
+        string calldata dataURI
+    ) external onlyRole(OPERATOR_ROLE) { // Guarded to operators who verify data and trigger conversion, not open to public to prevent abuse
+        require(user != address(0), "Invalid user");
+        require(unusedMb > 0, "Unused MB must be > 0");
+        require(bytes(billingMonth).length > 0, "Billing month required");
         require(bytes(dataURI).length > 0, "Data URI required");
 
-        bytes32 dataHash = keccak256(abi.encodePacked(dataURI));
-        require(!usedDataHashes[dataHash], "Duplicate data URI");
+        bytes32 recordKey = keccak256(abi.encodePacked(user, billingMonth));
+        require(!processedMonths[recordKey], "Month already processed for user"); // guard for duplicate conversions
 
-        usedDataHashes[dataHash] = true;
-
-        submissions[nextSubmissionId] = Submission({
-            id: nextSubmissionId,
-            submitter: msg.sender,
-            dataURI: dataURI,
-            rewardAmount: 0,
-            approved: false,
-            rewarded: false
-        });
-
-        emit DataSubmitted(nextSubmissionId, msg.sender, dataURI);
-
-        nextSubmissionId++;
-    }
-
-    /// @notice Approve a submission and mint tokens to the original submitter.
-    /// @dev DataRewards must be granted MINTER_ROLE on DataToken before this works.
-    function approveSubmission(
-        uint256 submissionId,
-        uint256 rewardAmount
-    ) external onlyRole(REVIEWER_ROLE) {
-        Submission storage submission = submissions[submissionId];
-
-        require(submission.submitter != address(0), "Submission not found");
-        require(!submission.approved, "Already approved");
-        require(!submission.rewarded, "Already rewarded");
+        uint256 rewardAmount = unusedMb / mbPerToken;
         require(rewardAmount > 0, "Reward must be > 0");
 
-        submission.approved = true;
-        submission.rewarded = true;
-        submission.rewardAmount = rewardAmount;
+        processedMonths[recordKey] = true;
 
-        dataToken.mint(submission.submitter, rewardAmount);
+        conversions[nextConversionId] = Conversion({
+            id: nextConversionId,
+            user: user,
+            unusedMb: unusedMb,
+            rewardAmount: rewardAmount,
+            billingMonth: billingMonth,
+            dataURI: dataURI,
+            timestamp: block.timestamp
+        });
 
-        emit DataApproved(
-            submissionId,
-            msg.sender,
-            submission.submitter,
-            rewardAmount
-        );
+        dataToken.mint(user, rewardAmount);
+
+        emit DataConverted(nextConversionId, user, unusedMb, rewardAmount, billingMonth, dataURI);
+
+        nextConversionId++;
     }
 
     /// @notice Update reward token address in case token contract is redeployed.
@@ -113,7 +101,17 @@ contract DataRewards is AccessControl {
         emit RewardTokenUpdated(oldToken, tokenAddress);
     }
 
-    function getSubmission(uint256 submissionId) external view returns (Submission memory) {
-        return submissions[submissionId];
+    /// @notice Update MB-per-token conversion rate.
+    function setConversionRate(uint256 newMbPerToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newMbPerToken > 0, "Invalid conversion rate");
+
+        uint256 oldMbPerToken = mbPerToken;
+        mbPerToken = newMbPerToken;
+
+        emit ConversionRateUpdated(oldMbPerToken, newMbPerToken);
+    }
+
+    function getConversion(uint256 conversionId) external view returns (Conversion memory) {
+        return conversions[conversionId];
     }
 }

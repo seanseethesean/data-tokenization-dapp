@@ -18,8 +18,7 @@ window.CONTRACT_CONFIG = {
   ],
 
   dataRewardsAbi: [
-    "function submitData(string dataURI)",
-    "function approveSubmission(uint256 submissionId, uint256 rewardAmount)",
+    "function convertUnusedData(address user, uint256 unusedMb, string billingMonth, string dataURI)",
   ],
 
   voucherRedemptionAbi: [

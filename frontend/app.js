@@ -14,8 +14,7 @@
 		tokenBalance: document.getElementById("tokenBalance"),
 		networkName: document.getElementById("networkName"),
 		log: document.getElementById("log"),
-		submitDataForm: document.getElementById("submitDataForm"),
-		approveSubmissionForm: document.getElementById("approveSubmissionForm"),
+		runConversionForm: document.getElementById("runConversionForm"),
 		createVoucherForm: document.getElementById("createVoucherForm"),
 		approveSpendingForm: document.getElementById("approveSpendingForm"),
 		redeemVoucherForm: document.getElementById("redeemVoucherForm")
@@ -176,29 +175,36 @@
 		return ethers.parseUnits(value, state.decimals);
 	}
 
-	async function handleSubmitData(event) {
-		event.preventDefault();
-		const dataURI = readInput(ui.submitDataForm, "#dataUri");
+	function parseMbAmount(value) {
+		if (!value) {
+			throw new Error("Unused MB is required");
+		}
 
-		await sendTx(
-			"submitData",
-			state.contracts.dataRewards.submitData(dataURI)
-		);
+		const parsed = Number(value);
+		if (!Number.isInteger(parsed) || parsed <= 0) {
+			throw new Error("Unused MB must be a positive whole number");
+		}
 
-		ui.submitDataForm.reset();
+		return BigInt(parsed);
 	}
 
-	async function handleApproveSubmission(event) {
+	async function handleRunConversion(event) {
 		event.preventDefault();
-		const submissionId = readInput(ui.approveSubmissionForm, "#submissionId");
-		const rewardAmount = parseTokenAmount(readInput(ui.approveSubmissionForm, "#approveRewardAmount"));
+		const user = readInput(ui.runConversionForm, "#conversionUser");
+		const unusedMb = parseMbAmount(readInput(ui.runConversionForm, "#unusedMb"));
+		const billingMonth = readInput(ui.runConversionForm, "#billingMonth");
+		const dataURI = readInput(ui.runConversionForm, "#conversionDataUri");
+
+		if (!ethers.isAddress(user)) {
+			throw new Error("Invalid user wallet address");
+		}
 
 		await sendTx(
-			"approveSubmission",
-			state.contracts.dataRewards.approveSubmission(submissionId, rewardAmount)
+			"convertUnusedData",
+			state.contracts.dataRewards.convertUnusedData(user, unusedMb, billingMonth, dataURI)
 		);
 
-		ui.approveSubmissionForm.reset();
+		ui.runConversionForm.reset();
 	}
 
 	async function handleCreateVoucher(event) {
@@ -263,15 +269,9 @@
 			}
 		});
 
-		ui.submitDataForm.addEventListener("submit", function (event) {
+		ui.runConversionForm.addEventListener("submit", function (event) {
 			guardedAction(function () {
-				return handleSubmitData(event);
-			});
-		});
-
-		ui.approveSubmissionForm.addEventListener("submit", function (event) {
-			guardedAction(function () {
-				return handleApproveSubmission(event);
+				return handleRunConversion(event);
 			});
 		});
 

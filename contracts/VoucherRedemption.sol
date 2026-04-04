@@ -2,10 +2,13 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IDataTokenBurnable {
+    function burnFrom(address account, uint256 value) external;
+}
 
 /// @title VoucherRedemption
-/// @notice Allows users to redeem predefined vouchers by paying DataToken to a treasury.
+/// @notice Allows users to redeem predefined vouchers by burning DataToken.
 contract VoucherRedemption is AccessControl {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
@@ -13,11 +16,11 @@ contract VoucherRedemption is AccessControl {
         uint256 id;
         string name;
         uint256 tokenCost;
+        uint256 remaining;
         bool active;
     }
 
-    IERC20 public dataToken;
-    address public treasury;
+    IDataTokenBurnable public dataToken;
     uint256 public nextVoucherId;
 
     mapping(uint256 => Voucher) public vouchers;
@@ -25,13 +28,15 @@ contract VoucherRedemption is AccessControl {
     event VoucherCreated(
         uint256 indexed voucherId,
         string name,
-        uint256 tokenCost
+        uint256 tokenCost,
+        uint256 remaining
     );
 
     event VoucherUpdated(
         uint256 indexed voucherId,
         string name,
         uint256 tokenCost,
+        uint256 remaining,
         bool active
     );
 
@@ -41,15 +46,11 @@ contract VoucherRedemption is AccessControl {
         uint256 tokenCost
     );
 
-    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
-
-    constructor(address tokenAddress, address treasuryAddress, address admin) {
+    constructor(address tokenAddress, address admin) {
         require(tokenAddress != address(0), "Invalid token address");
-        require(treasuryAddress != address(0), "Invalid treasury address");
         require(admin != address(0), "Invalid admin");
 
-        dataToken = IERC20(tokenAddress);
-        treasury = treasuryAddress;
+        dataToken = IDataTokenBurnable(tokenAddress);
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MANAGER_ROLE, admin);
@@ -58,19 +59,22 @@ contract VoucherRedemption is AccessControl {
     /// @notice Create a voucher users can redeem with tokens.
     function createVoucher(
         string calldata name,
-        uint256 tokenCost
+        uint256 tokenCost,
+        uint256 remaining
     ) external onlyRole(MANAGER_ROLE) {
         require(bytes(name).length > 0, "Voucher name required");
         require(tokenCost > 0, "Token cost must be > 0");
+        require(remaining > 0, "Remaining must be > 0");
 
         vouchers[nextVoucherId] = Voucher({
             id: nextVoucherId,
             name: name,
             tokenCost: tokenCost,
+            remaining: remaining,
             active: true
         });
 
-        emit VoucherCreated(nextVoucherId, name, tokenCost);
+        emit VoucherCreated(nextVoucherId, name, tokenCost, remaining);
 
         nextVoucherId++;
     }
@@ -80,42 +84,40 @@ contract VoucherRedemption is AccessControl {
         uint256 voucherId,
         string calldata name,
         uint256 tokenCost,
+        uint256 remaining,
         bool active
     ) external onlyRole(MANAGER_ROLE) {
         Voucher storage voucher = vouchers[voucherId];
         require(bytes(voucher.name).length > 0, "Voucher not found");
         require(bytes(name).length > 0, "Voucher name required");
         require(tokenCost > 0, "Token cost must be > 0");
+        require(remaining > 0, "Remaining must be > 0");
 
         voucher.name = name;
         voucher.tokenCost = tokenCost;
+        voucher.remaining = remaining;
         voucher.active = active;
 
-        emit VoucherUpdated(voucherId, name, tokenCost, active);
+        emit VoucherUpdated(voucherId, name, tokenCost, remaining, active);
     }
 
-    /// @notice Redeem an active voucher by transferring tokenCost from user to treasury.
-    /// @dev User must approve this contract for at least tokenCost before redeeming.
+    /// @notice Redeem an active voucher by burning tokenCost from caller.
+    /// @dev Caller must approve this contract for at least tokenCost before redeeming.
     function redeemVoucher(uint256 voucherId) external {
-        Voucher memory voucher = vouchers[voucherId];
+        Voucher storage voucher = vouchers[voucherId];
 
         require(bytes(voucher.name).length > 0, "Voucher not found");
         require(voucher.active, "Voucher inactive");
+        require(voucher.remaining > 0, "Voucher out of stock");
 
-        bool success = dataToken.transferFrom(msg.sender, treasury, voucher.tokenCost);
-        require(success, "Token transfer failed");
+        voucher.remaining -= 1;
+        if (voucher.remaining == 0) {
+            voucher.active = false;
+        }
+
+        dataToken.burnFrom(msg.sender, voucher.tokenCost);
 
         emit VoucherRedeemed(voucherId, msg.sender, voucher.tokenCost);
-    }
-
-    /// @notice Update treasury that receives redeemed tokens.
-    function setTreasury(address treasuryAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(treasuryAddress != address(0), "Invalid treasury address");
-
-        address oldTreasury = treasury;
-        treasury = treasuryAddress;
-
-        emit TreasuryUpdated(oldTreasury, treasuryAddress);
     }
 
     function getVoucher(uint256 voucherId) external view returns (Voucher memory) {
