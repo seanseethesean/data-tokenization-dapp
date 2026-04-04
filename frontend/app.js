@@ -38,14 +38,51 @@
 			throw new Error("Missing CONTRACT_CONFIG object in contractConfig.js");
 		}
 
+		console.log("[CONFIG] window.CONTRACT_CONFIG:", window.CONTRACT_CONFIG);
+
 		const { dataTokenAddress, dataRewardsAddress, voucherRedemptionAddress } = window.CONTRACT_CONFIG;
 		if (!dataTokenAddress || !dataRewardsAddress || !voucherRedemptionAddress) {
 			throw new Error("Missing one or more contract addresses in contractConfig.js");
 		}
+
+		const cfg = window.CONTRACT_CONFIG;
+		if (!Array.isArray(cfg.dataTokenAbi) || cfg.dataTokenAbi.length === 0) {
+			throw new Error("dataTokenAbi is missing or empty in contractConfig.js");
+		}
+
+		if (!Array.isArray(cfg.dataRewardsAbi) || cfg.dataRewardsAbi.length === 0) {
+			throw new Error("dataRewardsAbi is missing or empty in contractConfig.js");
+		}
+
+		if (!Array.isArray(cfg.voucherRedemptionAbi) || cfg.voucherRedemptionAbi.length === 0) {
+			throw new Error("voucherRedemptionAbi is missing or empty in contractConfig.js");
+		}
+
+		console.log("[CONFIG] dataTokenAddress:", cfg.dataTokenAddress);
+		console.log("[CONFIG] dataTokenAbi:", cfg.dataTokenAbi);
 	}
 
 	function isMetaMaskAvailable() {
+		console.log("[ENV] window.ethereum exists:", typeof window.ethereum !== "undefined");
 		return typeof window.ethereum !== "undefined";
+	}
+
+	async function assertTokenContractReadable() {
+		const tokenAddress = window.CONTRACT_CONFIG.dataTokenAddress;
+		const code = await state.provider.getCode(tokenAddress);
+		console.log("[CHECK] provider.getCode(dataTokenAddress):", tokenAddress, code);
+
+		if (!code || code === "0x") {
+			throw new Error("No contract code found at dataTokenAddress on current MetaMask network");
+		}
+
+		try {
+			const probe = await state.contracts.dataToken.decimals.staticCall();
+			console.log("[CHECK] decimals.staticCall() returned:", probe.toString());
+		} catch (error) {
+			console.error("[CHECK] decimals.staticCall() failed", error);
+			throw new Error("Failed to read decimals(). Check token address, ABI, and selected MetaMask network.");
+		}
 	}
 
 	async function connectWallet() {
@@ -60,9 +97,23 @@
 		state.signer = await state.provider.getSigner();
 		state.account = await state.signer.getAddress();
 		state.network = await state.provider.getNetwork();
+		console.log("[CONNECT] account:", state.account);
+		console.log("[CONNECT] network:", state.network);
 
+		const expectedChainId = window.CONTRACT_CONFIG.expectedChainId;
+		if (expectedChainId && Number(state.network.chainId) !== Number(expectedChainId)) {
+			throw new Error(
+				"Wrong network in MetaMask. Expected chainId " + expectedChainId +
+				", got " + state.network.chainId.toString()
+			);
+		}
+
+		console.log("[CONNECT] calling initContracts()...");
 		initContracts();
+		await assertTokenContractReadable();
+		console.log("[CONNECT] calling dataToken.decimals() on contract:", await state.contracts.dataToken.getAddress());
 		state.decimals = await state.contracts.dataToken.decimals();
+		console.log("[CONNECT] decimals:", state.decimals.toString());
 
 		ui.walletAddress.textContent = shortAddress(state.account);
 		ui.networkName.textContent = state.network.name + " (chainId: " + state.network.chainId + ")";
@@ -73,12 +124,18 @@
 
 	function initContracts() {
 		const cfg = window.CONTRACT_CONFIG;
+		console.log("[INIT] constructing contracts with:", {
+			dataTokenAddress: cfg.dataTokenAddress,
+			dataRewardsAddress: cfg.dataRewardsAddress,
+			voucherRedemptionAddress: cfg.voucherRedemptionAddress
+		});
 
 		state.contracts.dataToken = new ethers.Contract(
 			cfg.dataTokenAddress,
 			cfg.dataTokenAbi,
 			state.signer
 		);
+		console.log("[INIT] dataToken contract target:", state.contracts.dataToken.target);
 
 		state.contracts.dataRewards = new ethers.Contract(
 			cfg.dataRewardsAddress,
@@ -95,6 +152,7 @@
 
 	async function refreshBalance() {
 		if (!state.account || !state.contracts.dataToken) return;
+		console.log("[BALANCE] reading balanceOf for:", state.account);
 		const rawBalance = await state.contracts.dataToken.balanceOf(state.account);
 		ui.tokenBalance.textContent = ethers.formatUnits(rawBalance, state.decimals);
 	}
@@ -121,11 +179,10 @@
 	async function handleSubmitData(event) {
 		event.preventDefault();
 		const dataURI = readInput(ui.submitDataForm, "#dataUri");
-		const rewardAmount = parseTokenAmount(readInput(ui.submitDataForm, "#rewardAmount"));
 
 		await sendTx(
 			"submitData",
-			state.contracts.dataRewards.submitData(dataURI, rewardAmount)
+			state.contracts.dataRewards.submitData(dataURI)
 		);
 
 		ui.submitDataForm.reset();
@@ -134,10 +191,11 @@
 	async function handleApproveSubmission(event) {
 		event.preventDefault();
 		const submissionId = readInput(ui.approveSubmissionForm, "#submissionId");
+		const rewardAmount = parseTokenAmount(readInput(ui.approveSubmissionForm, "#approveRewardAmount"));
 
 		await sendTx(
 			"approveSubmission",
-			state.contracts.dataRewards.approveSubmission(submissionId)
+			state.contracts.dataRewards.approveSubmission(submissionId, rewardAmount)
 		);
 
 		ui.approveSubmissionForm.reset();

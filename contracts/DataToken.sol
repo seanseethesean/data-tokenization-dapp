@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-/// @title DataToken
 /// @notice ERC20 token used for rewarding approved data submissions and voucher redemption.
 contract DataToken is ERC20, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -12,7 +11,7 @@ contract DataToken is ERC20, AccessControl {
     event TokensMinted(address indexed to, uint256 amount, address indexed minter);
 
     constructor(uint256 initialSupply, address admin) ERC20("DataToken", "DTT") {
-        require(admin != address(0), "Invalid admin");
+        require(admin != address(0), "Invalid admin"); // ensure admin is not zero address
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MINTER_ROLE, admin);

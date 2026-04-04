@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-interface IDataToken {
+interface IDataToken { // so solidity knows the address has a mint function
     function mint(address to, uint256 amount) external;
 }
 
@@ -30,8 +30,7 @@ contract DataRewards is AccessControl {
     event DataSubmitted(
         uint256 indexed submissionId,
         address indexed submitter,
-        string dataURI,
-        uint256 rewardAmount
+        string dataURI
     );
 
     event DataApproved(
@@ -54,9 +53,9 @@ contract DataRewards is AccessControl {
     }
 
     /// @notice Submit data for review. Duplicate URIs are blocked in this demo.
-    function submitData(string calldata dataURI, uint256 rewardAmount) external {
+    /// @dev Reward amount is intentionally set by reviewer/admin at approval time.
+    function submitData(string calldata dataURI) external {
         require(bytes(dataURI).length > 0, "Data URI required");
-        require(rewardAmount > 0, "Reward must be > 0");
 
         bytes32 dataHash = keccak256(abi.encodePacked(dataURI));
         require(!usedDataHashes[dataHash], "Duplicate data URI");
@@ -67,35 +66,40 @@ contract DataRewards is AccessControl {
             id: nextSubmissionId,
             submitter: msg.sender,
             dataURI: dataURI,
-            rewardAmount: rewardAmount,
+            rewardAmount: 0,
             approved: false,
             rewarded: false
         });
 
-        emit DataSubmitted(nextSubmissionId, msg.sender, dataURI, rewardAmount);
+        emit DataSubmitted(nextSubmissionId, msg.sender, dataURI);
 
         nextSubmissionId++;
     }
 
     /// @notice Approve a submission and mint tokens to the original submitter.
     /// @dev DataRewards must be granted MINTER_ROLE on DataToken before this works.
-    function approveSubmission(uint256 submissionId) external onlyRole(REVIEWER_ROLE) {
+    function approveSubmission(
+        uint256 submissionId,
+        uint256 rewardAmount
+    ) external onlyRole(REVIEWER_ROLE) {
         Submission storage submission = submissions[submissionId];
 
         require(submission.submitter != address(0), "Submission not found");
         require(!submission.approved, "Already approved");
         require(!submission.rewarded, "Already rewarded");
+        require(rewardAmount > 0, "Reward must be > 0");
 
         submission.approved = true;
         submission.rewarded = true;
+        submission.rewardAmount = rewardAmount;
 
-        dataToken.mint(submission.submitter, submission.rewardAmount);
+        dataToken.mint(submission.submitter, rewardAmount);
 
         emit DataApproved(
             submissionId,
             msg.sender,
             submission.submitter,
-            submission.rewardAmount
+            rewardAmount
         );
     }
 

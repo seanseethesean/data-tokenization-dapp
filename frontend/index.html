@@ -16,7 +16,7 @@
 		<main class="app-shell">
 			<header class="topbar">
 				<div>
-					<h1>Data Token School Demo</h1>
+					<h1>Data Token Demo</h1>
 					<p class="subtitle">Submit data, reward contributors, and redeem vouchers.</p>
 				</div>
 				<button id="connectBtn" class="btn btn-primary">Connect MetaMask</button>
@@ -39,15 +39,21 @@
 
 			<section class="grid">
 				<article class="card">
+					<h2>Customer Actions</h2>
+					<p class="subtitle">For regular users submitting data and redeeming vouchers.</p>
+				</article>
+
+				<article class="card">
+					<h2>Admin / Reviewer Actions</h2>
+					<p class="subtitle">For reviewer and manager role accounts only.</p>
+				</article>
+
+				<article class="card">
 					<h2>Submit Data</h2>
 					<form id="submitDataForm" class="form-stack">
 						<label>
 							Data URI
 							<input id="dataUri" type="text" placeholder="ipfs://example-hash" required />
-						</label>
-						<label>
-							Reward (DTT)
-							<input id="rewardAmount" type="number" min="0" step="0.0001" placeholder="10" required />
 						</label>
 						<button type="submit" class="btn">Submit</button>
 					</form>
@@ -59,6 +65,10 @@
 						<label>
 							Submission ID
 							<input id="submissionId" type="number" min="0" placeholder="0" required />
+						</label>
+						<label>
+							Reward (DTT)
+							<input id="approveRewardAmount" type="number" min="0" step="0.0001" placeholder="10" required />
 						</label>
 						<button type="submit" class="btn">Approve + Reward</button>
 					</form>
