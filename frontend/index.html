@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Data Token Demo</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="./style.css" />
+	</head>
+	<body>
+		<main class="app-shell">
+			<header class="topbar">
+				<div>
+					<h1>Data Token School Demo</h1>
+					<p class="subtitle">Submit data, reward contributors, and redeem vouchers.</p>
+				</div>
+				<button id="connectBtn" class="btn btn-primary">Connect MetaMask</button>
+			</header>
+
+			<section class="status-panel card">
+				<div class="status-item">
+					<span class="label">Wallet</span>
+					<span id="walletAddress" class="value">Not connected</span>
+				</div>
+				<div class="status-item">
+					<span class="label">DTT Balance</span>
+					<span id="tokenBalance" class="value">0</span>
+				</div>
+				<div class="status-item">
+					<span class="label">Network</span>
+					<span id="networkName" class="value">-</span>
+				</div>
+			</section>
+
+			<section class="grid">
+				<article class="card">
+					<h2>Submit Data</h2>
+					<form id="submitDataForm" class="form-stack">
+						<label>
+							Data URI
+							<input id="dataUri" type="text" placeholder="ipfs://example-hash" required />
+						</label>
+						<label>
+							Reward (DTT)
+							<input id="rewardAmount" type="number" min="0" step="0.0001" placeholder="10" required />
+						</label>
+						<button type="submit" class="btn">Submit</button>
+					</form>
+				</article>
+
+				<article class="card">
+					<h2>Approve Submission (Reviewer)</h2>
+					<form id="approveSubmissionForm" class="form-stack">
+						<label>
+							Submission ID
+							<input id="submissionId" type="number" min="0" placeholder="0" required />
+						</label>
+						<button type="submit" class="btn">Approve + Reward</button>
+					</form>
+				</article>
+
+				<article class="card">
+					<h2>Create Voucher (Manager)</h2>
+					<form id="createVoucherForm" class="form-stack">
+						<label>
+							Voucher Name
+							<input id="voucherName" type="text" placeholder="Coffee Coupon" required />
+						</label>
+						<label>
+							Voucher Cost (DTT)
+							<input id="voucherCost" type="number" min="0" step="0.0001" placeholder="5" required />
+						</label>
+						<button type="submit" class="btn">Create Voucher</button>
+					</form>
+				</article>
+
+				<article class="card">
+					<h2>Approve Token Spending</h2>
+					<form id="approveSpendingForm" class="form-stack">
+						<label>
+							Amount to Approve (DTT)
+							<input id="approveAmount" type="number" min="0" step="0.0001" placeholder="50" required />
+						</label>
+						<button type="submit" class="btn">Approve Voucher Contract</button>
+					</form>
+				</article>
+
+				<article class="card">
+					<h2>Redeem Voucher</h2>
+					<form id="redeemVoucherForm" class="form-stack">
+						<label>
+							Voucher ID
+							<input id="redeemVoucherId" type="number" min="0" placeholder="0" required />
+						</label>
+						<button type="submit" class="btn">Redeem</button>
+					</form>
+				</article>
+
+				<article class="card">
+					<h2>Activity Log</h2>
+					<div id="log" class="log"></div>
+				</article>
+			</section>
+		</main>
+
+		<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+		<script src="./contractConfig.js"></script>
+		<script src="./app.js"></script>
+	</body>
+</html>
