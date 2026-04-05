@@ -2,9 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import StatCard from "../components/StatCard";
 import {
   grantOperatorRole,
-  grantRedeemerRole,
   hasOperatorRole,
-  hasRedeemerRole,
   parseError,
   readAdminStats
 } from "../lib/contracts";
@@ -20,7 +18,8 @@ const initialCreateVoucherForm = {
   name: "",
   tokenCost: "",
   remaining: "",
-  maxPerUser: ""
+  maxPerUser: "",
+  merchant: ""
 };
 
 const initialUpdateVoucherForm = {
@@ -40,7 +39,6 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
   const [createVoucherForm, setCreateVoucherForm] = useState(initialCreateVoucherForm);
   const [updateVoucherForm, setUpdateVoucherForm] = useState(initialUpdateVoucherForm);
   const [roleTargetAddress, setRoleTargetAddress] = useState("");
-  const [redeemerRoleStatus, setRedeemerRoleStatus] = useState(null);
   const [operatorRoleStatus, setOperatorRoleStatus] = useState(null);
 
   const loadStats = useCallback(async () => {
@@ -95,7 +93,8 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
         createVoucherForm.name,
         BigInt(createVoucherForm.tokenCost),
         BigInt(createVoucherForm.remaining),
-        BigInt(createVoucherForm.maxPerUser)
+        BigInt(createVoucherForm.maxPerUser),
+        createVoucherForm.merchant
       );
       pushAlert("info", "Create Voucher Submitted", tx.hash);
       await tx.wait();
@@ -146,38 +145,6 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
       pushAlert("success", `${contractName} ${action} confirmed`, "State updated on-chain.");
     } catch (error) {
       pushAlert("error", `${contractName} ${action} failed`, parseError(error));
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function onGrantRedeemerRole() {
-    if (!contracts || !roleTargetAddress) return;
-
-    try {
-      setBusy("grant-redeemer");
-      const tx = await grantRedeemerRole(contracts, roleTargetAddress);
-      pushAlert("info", "Grant REDEEMER_ROLE Submitted", tx.hash);
-      await tx.wait();
-      pushAlert("success", "REDEEMER_ROLE Granted", `Granted to ${roleTargetAddress}`);
-      setRedeemerRoleStatus(true);
-    } catch (error) {
-      pushAlert("error", "Grant REDEEMER_ROLE Failed", parseError(error));
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function onCheckRedeemerRole() {
-    if (!contracts || !roleTargetAddress) return;
-
-    try {
-      setBusy("check-redeemer");
-      const hasRole = await hasRedeemerRole(contracts, roleTargetAddress);
-      setRedeemerRoleStatus(Boolean(hasRole));
-      pushAlert("success", "REDEEMER_ROLE Checked", `${roleTargetAddress}: ${Boolean(hasRole)}`);
-    } catch (error) {
-      pushAlert("error", "Check REDEEMER_ROLE Failed", parseError(error));
     } finally {
       setBusy("");
     }
@@ -273,6 +240,7 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
             <h2 className="text-lg font-semibold text-slate-900">Create Voucher Campaign</h2>
             <div className="mt-4 grid gap-3">
               <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Voucher name" value={createVoucherForm.name} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, name: e.target.value }))} required />
+              <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Merchant address (0x...)" value={createVoucherForm.merchant} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, merchant: e.target.value }))} required />
               <div className="grid grid-cols-3 gap-2">
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Token cost" type="number" min="1" value={createVoucherForm.tokenCost} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, tokenCost: e.target.value }))} required />
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Remaining" type="number" min="1" value={createVoucherForm.remaining} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, remaining: e.target.value }))} required />
@@ -333,7 +301,7 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
 
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Role Management</h2>
-        <p className="mt-1 text-sm text-slate-500">Use Admin wallet to grant or verify critical roles for merchant/operator accounts.</p>
+        <p className="mt-1 text-sm text-slate-500">Merchant access is now per-voucher via merchant address. Use this section for OPERATOR_ROLE only.</p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
           <input
@@ -347,56 +315,29 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          <div className="rounded-xl border border-slate-200 p-4">
-            <p className="text-sm font-semibold text-slate-900">VoucherRedemption REDEEMER_ROLE</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={busy === "grant-redeemer" || !roleTargetAddress}
-                onClick={onGrantRedeemerRole}
-                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-              >
-                {busy === "grant-redeemer" ? "Granting..." : "Grant REDEEMER_ROLE"}
-              </button>
-              <button
-                type="button"
-                disabled={busy === "check-redeemer" || !roleTargetAddress}
-                onClick={onCheckRedeemerRole}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
-              >
-                {busy === "check-redeemer" ? "Checking..." : "Check REDEEMER_ROLE"}
-              </button>
-            </div>
-            <p className="mt-3 text-xs text-slate-600">
-              hasRole result: <span className="font-semibold text-slate-900">{redeemerRoleStatus === null ? "-" : String(redeemerRoleStatus)}</span>
-            </p>
+        <div className="mt-4 rounded-xl border border-slate-200 p-4">
+          <p className="text-sm font-semibold text-slate-900">DataRewards OPERATOR_ROLE (Optional)</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy === "grant-operator" || !roleTargetAddress}
+              onClick={onGrantOperatorRole}
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+            >
+              {busy === "grant-operator" ? "Granting..." : "Grant OPERATOR_ROLE"}
+            </button>
+            <button
+              type="button"
+              disabled={busy === "check-operator" || !roleTargetAddress}
+              onClick={onCheckOperatorRole}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+            >
+              {busy === "check-operator" ? "Checking..." : "Check OPERATOR_ROLE"}
+            </button>
           </div>
-
-          <div className="rounded-xl border border-slate-200 p-4">
-            <p className="text-sm font-semibold text-slate-900">DataRewards OPERATOR_ROLE (Optional)</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={busy === "grant-operator" || !roleTargetAddress}
-                onClick={onGrantOperatorRole}
-                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-              >
-                {busy === "grant-operator" ? "Granting..." : "Grant OPERATOR_ROLE"}
-              </button>
-              <button
-                type="button"
-                disabled={busy === "check-operator" || !roleTargetAddress}
-                onClick={onCheckOperatorRole}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
-              >
-                {busy === "check-operator" ? "Checking..." : "Check OPERATOR_ROLE"}
-              </button>
-            </div>
-            <p className="mt-3 text-xs text-slate-600">
-              hasRole result: <span className="font-semibold text-slate-900">{operatorRoleStatus === null ? "-" : String(operatorRoleStatus)}</span>
-            </p>
-          </div>
+          <p className="mt-3 text-xs text-slate-600">
+            hasRole result: <span className="font-semibold text-slate-900">{operatorRoleStatus === null ? "-" : String(operatorRoleStatus)}</span>
+          </p>
         </div>
       </article>
 

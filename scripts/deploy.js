@@ -4,13 +4,13 @@ const hre = require("hardhat");
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const admin = process.env.ADMIN_ADDRESS || deployer.address;
-  const initialSupplyWhole = process.env.INITIAL_SUPPLY || "1000";
+  const initialSupplyWhole = process.env.INITIAL_SUPPLY || "0";
   const mbPerToken = BigInt(process.env.MB_PER_TOKEN || "500");
   const voucherBaseUri = process.env.VOUCHER_BASE_URI || "https://example.com/vouchers/{id}.json";
   if (mbPerToken <= 0n) {
     throw new Error("MB_PER_TOKEN must be greater than 0");
   }
-  const initialSupply = hre.ethers.parseUnits(initialSupplyWhole, 18);
+  const initialSupply = BigInt(initialSupplyWhole);
 
   console.log("Deploying with account:", deployer.address);
   console.log("Admin address:", admin);
@@ -34,11 +34,7 @@ async function main() {
   const voucherTokenAddress = await voucherToken.getAddress();
 
   const VoucherRedemption = await hre.ethers.getContractFactory("VoucherRedemption");
-  const voucherRedemption = await VoucherRedemption.deploy(
-    dataTokenAddress,
-    voucherTokenAddress,
-    admin
-  );
+  const voucherRedemption = await VoucherRedemption.deploy(dataTokenAddress, voucherTokenAddress, admin);
   await voucherRedemption.waitForDeployment();
   const voucherRedemptionAddress = await voucherRedemption.getAddress();
 

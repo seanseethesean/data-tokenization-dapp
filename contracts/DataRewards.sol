@@ -64,7 +64,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
         mbPerToken = _mbPerToken;
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(OPERATOR_ROLE, admin);
+        _grantRole(OPERATOR_ROLE, admin); // this is us, the third party
     }
 
     /// @notice Convert verified unused MB into reward tokens for one user and billing month.

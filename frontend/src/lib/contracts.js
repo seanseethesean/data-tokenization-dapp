@@ -14,7 +14,8 @@ function normalizeVoucher(raw, fallbackId) {
     tokenCost: BigInt(raw.tokenCost ?? raw[2] ?? 0),
     remaining: BigInt(raw.remaining ?? raw[3] ?? 0),
     maxPerUser: BigInt(raw.maxPerUser ?? raw[4] ?? 0),
-    active: Boolean(raw.active ?? raw[5])
+    active: Boolean(raw.active ?? raw[5]),
+    merchant: raw.merchant ?? raw[6] ?? "0x0000000000000000000000000000000000000000"
   };
 }
 
@@ -98,21 +99,6 @@ export async function readAdminStats(contracts) {
   };
 }
 
-// Fetch role constant from VoucherRedemption contract for role management UI.
-export async function getRedeemerRole(contracts) {
-  return contracts.voucherRedemption.REDEEMER_ROLE();
-}
-
-export async function grantRedeemerRole(contracts, targetAddress) {
-  const role = await getRedeemerRole(contracts);
-  return contracts.voucherRedemption.grantRole(role, targetAddress);
-}
-
-export async function hasRedeemerRole(contracts, targetAddress) {
-  const role = await getRedeemerRole(contracts);
-  return contracts.voucherRedemption.hasRole(role, targetAddress);
-}
-
 // Optional operator helpers for DataRewards role assignment from same Admin screen.
 export async function getOperatorRole(contracts) {
   return contracts.dataRewards.OPERATOR_ROLE();
@@ -126,4 +112,10 @@ export async function grantOperatorRole(contracts, targetAddress) {
 export async function hasOperatorRole(contracts, targetAddress) {
   const role = await getOperatorRole(contracts);
   return contracts.dataRewards.hasRole(role, targetAddress);
+}
+
+export async function readMerchantCampaigns(contracts, merchantAddress) {
+  const vouchers = await readVoucherCatalog(contracts.voucherRedemption);
+  const merchantLower = merchantAddress.toLowerCase();
+  return vouchers.filter((voucher) => voucher.merchant.toLowerCase() === merchantLower);
 }

@@ -153,6 +153,8 @@ function App() {
               <MerchantPage
                 contracts={contracts}
                 pushAlert={pushAlert}
+                 account={wallet.account}
+                 refreshNonce={refreshNonce}
               />
             ) : null}
           </section>

@@ -15,7 +15,6 @@ interface IDataTokenBurnable { // separate interface to avoid importing full Dat
 contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
     // DESIGN PATTERN: RBAC
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 public constant REDEEMER_ROLE = keccak256("REDEEMER_ROLE");
 
     struct Voucher { // represents a voucher campaign, each with its own token ID in VoucherToken
         uint256 id;
@@ -24,6 +23,7 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         uint256 remaining;
         uint256 maxPerUser; // to prevent abuse where one user redeems all vouchers, set a max redemption limit per user for each voucher campaign
         bool active;
+        address merchant;
     }
 
     IDataTokenBurnable public dataToken; // initialised in constructor
@@ -71,7 +71,6 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MANAGER_ROLE, admin); 
-        _grantRole(REDEEMER_ROLE, admin); // merchant role that can call useVoucher to burn redeemed vouchers when customers use them in real world
     }
 
     /// @notice Create a voucher users can redeem with tokens.
@@ -79,12 +78,14 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         string calldata name,
         uint256 tokenCost,
         uint256 remaining,
-        uint256 maxPerUser // maximum number of times each user can redeem this specific voucher
+        uint256 maxPerUser, // maximum number of times each user can redeem this specific voucher
+        address merchant
     ) external onlyRole(MANAGER_ROLE) whenNotPaused {
         require(bytes(name).length > 0, "Voucher name required");
         require(tokenCost > 0, "Token cost must be > 0");
         require(remaining > 0, "Remaining must be > 0");
         require(maxPerUser > 0, "maxPerUser must be > 0");
+        require(merchant != address(0), "Merchant required");
 
         vouchers[nextVoucherId] = Voucher({
             id: nextVoucherId,
@@ -92,7 +93,8 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
             tokenCost: tokenCost,
             remaining: remaining,
             maxPerUser: maxPerUser,
-            active: true
+            active: true,
+            merchant: merchant
         });
 
         emit VoucherCreated(nextVoucherId, name, tokenCost, remaining);
@@ -152,7 +154,12 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         emit VoucherRedeemed(voucherId, msg.sender, 1);
     }
 
-    function useVoucher(address user, uint256 voucherId) external onlyRole(REDEEMER_ROLE) whenNotPaused nonReentrant {
+    function useVoucher(address user, uint256 voucherId) external whenNotPaused nonReentrant {
+        Voucher storage voucher = vouchers[voucherId];
+
+        require(bytes(voucher.name).length > 0, "Voucher not found");
+        // RBAC to restrict this function to only the merchant associated with the voucher 
+        require(msg.sender == voucher.merchant, "Not authorized merchant");
         require(user != address(0), "Invalid user");
         require(voucherToken.balanceOf(user, voucherId) > 0, "User has no voucher");
 
