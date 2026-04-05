@@ -19,7 +19,7 @@ async function main() {
   console.log("Voucher base URI:", voucherBaseUri);
 
   const DataToken = await hre.ethers.getContractFactory("DataToken");
-  const dataToken = await DataToken.deploy(initialSupply, admin);
+  const dataToken = await DataToken.deploy(admin);
   await dataToken.waitForDeployment();
   const dataTokenAddress = await dataToken.getAddress();
 

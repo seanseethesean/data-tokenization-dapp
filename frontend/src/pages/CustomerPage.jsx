@@ -157,15 +157,20 @@ export default function CustomerPage({ account, roleLabel, contracts, pushAlert,
           <p className="text-sm text-slate-500">This wallet does not own any vouchers yet.</p>
         ) : (
           <div className="max-h-[320px] overflow-y-auto pr-1">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {ownedVouchers.map((voucher) => (
-                <VoucherCard
+                <article
                   key={`owned-${voucher.id}`}
-                  voucher={voucher}
-                  ownedBalance={snapshot.ownedBalances[voucher.id] || 0n}
-                  redeemBusy={redeemBusyId === voucher.id}
-                  onRedeem={redeemVoucher}
-                />
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm"
+                >
+                  <p className="text-xs font-medium uppercase tracking-widest text-slate-500">
+                    Voucher #{voucher.id}
+                  </p>
+                  <h3 className="mt-1 text-base font-semibold text-slate-900">{voucher.name}</h3>
+                  <p className="mt-2 text-sm text-slate-600">
+                    You have: <span className="font-semibold text-slate-900">{(snapshot.ownedBalances[voucher.id] || 0n).toString()}</span>
+                  </p>
+                </article>
               ))}
             </div>
           </div>

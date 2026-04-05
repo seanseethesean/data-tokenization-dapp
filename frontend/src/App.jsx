@@ -143,6 +143,7 @@ function App() {
 
             {wallet.account && activeTab === "Admin" ? (
               <AdminPage
+                account={wallet.account}
                 contracts={contracts}
                 pushAlert={pushAlert}
                 refreshNonce={refreshNonce}

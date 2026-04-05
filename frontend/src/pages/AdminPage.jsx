@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { ethers } from "ethers";
 import StatCard from "../components/StatCard";
 import {
   grantOperatorRole,
@@ -32,7 +33,7 @@ const initialUpdateVoucherForm = {
   active: true
 };
 
-export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerRefresh }) {
+export default function AdminPage({ account, contracts, pushAlert, refreshNonce, triggerRefresh }) {
   const [stats, setStats] = useState({ mbPerToken: 0n, nextConversionId: 0n, nextVoucherId: 0n });
   const [loadingStats, setLoadingStats] = useState(false);
   const [busy, setBusy] = useState("");
@@ -64,17 +65,42 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
     e.preventDefault();
     if (!contracts) return;
 
+    let recipient;
+    try {
+      recipient = ethers.getAddress((conversionForm.user || "").trim());
+    } catch {
+      pushAlert("error", "Conversion Failed", "Customer wallet address is invalid.");
+      return;
+    }
+
     try {
       setBusy("convert");
       const tx = await contracts.dataRewards.convertUnusedData(
-        conversionForm.user,
+        recipient,
         BigInt(conversionForm.unusedMb),
         conversionForm.billingMonth,
         conversionForm.dataURI
       );
-      pushAlert("info", "Conversion Submitted", tx.hash);
-      await tx.wait();
-      pushAlert("success", "Conversion Confirmed", "Unused data converted into DTT.");
+      pushAlert("info", "Conversion Submitted", `tx: ${tx.hash} | recipient: ${recipient}`);
+      const receipt = await tx.wait();
+
+      let emittedRecipient = recipient;
+      let emittedReward = null;
+      for (const log of receipt.logs || []) {
+        try {
+          const parsed = contracts.dataRewards.interface.parseLog(log);
+          if (parsed?.name === "DataConverted") {
+            emittedRecipient = parsed.args.user;
+            emittedReward = parsed.args.rewardAmount;
+            break;
+          }
+        } catch {
+          // Ignore non-DataRewards logs.
+        }
+      }
+
+      const rewardText = emittedReward !== null ? ` | reward: ${emittedReward.toString()} DTT` : "";
+      pushAlert("success", "Conversion Confirmed", `Minted to ${emittedRecipient}${rewardText}`);
       setConversionForm(initialConversionForm);
       triggerRefresh();
     } catch (error) {
@@ -234,6 +260,7 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
         <form onSubmit={runConversion} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Run Monthly Conversion</h2>
           <p className="mt-1 text-sm text-slate-500">Convert verified unused customer data into DTT rewards.</p>
+          <p className="mt-2 text-xs text-slate-500">Operator wallet: <span className="font-semibold text-slate-700">{account || "Not connected"}</span></p>
           <div className="mt-4 grid gap-3">
             <input
               className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
