@@ -1,122 +1,13 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Data Token Demo</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
-			rel="stylesheet"
-		/>
-		<link rel="stylesheet" href="./style.css" />
-	</head>
-	<body>
-		<main class="app-shell">
-			<header class="topbar">
-				<div>
-					<h1>Data Token Demo</h1>
-					<p class="subtitle">Submit data, reward contributors, and redeem vouchers.</p>
-				</div>
-				<button id="connectBtn" class="btn btn-primary">Connect MetaMask</button>
-			</header>
-
-			<section class="status-panel card">
-				<div class="status-item">
-					<span class="label">Wallet</span>
-					<span id="walletAddress" class="value">Not connected</span>
-				</div>
-				<div class="status-item">
-					<span class="label">DTT Balance</span>
-					<span id="tokenBalance" class="value">0</span>
-				</div>
-				<div class="status-item">
-					<span class="label">Network</span>
-					<span id="networkName" class="value">-</span>
-				</div>
-			</section>
-
-			<section class="grid">
-				<article class="card">
-					<h2>Customer Actions</h2>
-					<p class="subtitle">Connect wallet, view balance, approve spending, and redeem vouchers.</p>
-				</article>
-
-				<article class="card">
-					<h2>Admin Actions</h2>
-					<p class="subtitle">For operator and manager role accounts only.</p>
-				</article>
-
-				<article class="card">
-					<h2>Monthly Data Conversion (Operator)</h2>
-					<form id="runConversionForm" class="form-stack">
-						<label>
-							User Wallet Address
-							<input id="conversionUser" type="text" placeholder="0x..." required />
-						</label>
-						<label>
-							Unused Data (MB)
-							<input id="unusedMb" type="number" min="1" step="1" placeholder="1490" required />
-						</label>
-						<label>
-							Billing Month
-							<input id="billingMonth" type="text" placeholder="2026-04" required />
-						</label>
-						<label>
-							Data URI
-							<input id="conversionDataUri" type="text" placeholder="ipfs://billing-proof" required />
-						</label>
-						<button type="submit" class="btn">Run Monthly Conversion</button>
-					</form>
-				</article>
-
-				<article class="card">
-					<h2>Create Voucher (Manager)</h2>
-					<form id="createVoucherForm" class="form-stack">
-						<label>
-							Voucher Name
-							<input id="voucherName" type="text" placeholder="Coffee Coupon" required />
-						</label>
-						<label>
-							Voucher Cost (DTT)
-							<input id="voucherCost" type="number" min="0" step="0.0001" placeholder="5" required />
-						</label>
-						<button type="submit" class="btn">Create Voucher</button>
-					</form>
-				</article>
-
-				<article class="card">
-					<h2>Approve Token Spending</h2>
-					<form id="approveSpendingForm" class="form-stack">
-						<label>
-							Amount to Approve (DTT)
-							<input id="approveAmount" type="number" min="0" step="0.0001" placeholder="50" required />
-						</label>
-						<button type="submit" class="btn">Approve Voucher Contract</button>
-					</form>
-				</article>
-
-				<article class="card">
-					<h2>Redeem Voucher</h2>
-					<form id="redeemVoucherForm" class="form-stack">
-						<label>
-							Voucher ID
-							<input id="redeemVoucherId" type="number" min="0" placeholder="0" required />
-						</label>
-						<button type="submit" class="btn">Redeem</button>
-					</form>
-				</article>
-
-				<article class="card">
-					<h2>Activity Log</h2>
-					<div id="log" class="log"></div>
-				</article>
-			</section>
-		</main>
-
-		<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
-		<script src="./contractConfig.js"></script>
-		<script src="./app.js"></script>
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>frontend-react</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
