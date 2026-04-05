@@ -140,5 +140,28 @@ export async function hasOperatorRole(contracts, targetAddress) {
 export async function readMerchantCampaigns(contracts, merchantAddress) {
   const vouchers = await readVoucherCatalog(contracts.voucherRedemption);
   const merchantLower = merchantAddress.toLowerCase();
-  return vouchers.filter((voucher) => voucher.merchant.toLowerCase() === merchantLower);
+
+  const campaigns = await Promise.all(
+    vouchers
+      .filter((voucher) => voucher.merchant.toLowerCase() === merchantLower)
+      .map(async (voucher) => {
+        const [totalRedeemed, totalUsed] = await Promise.all([
+          contracts.voucherRedemption.totalRedeemed(voucher.id),
+          contracts.voucherRedemption.totalUsed(voucher.id)
+        ]);
+
+        const redeemed = BigInt(totalRedeemed);
+        const used = BigInt(totalUsed);
+        const outstanding = redeemed > used ? redeemed - used : 0n;
+
+        return {
+          ...voucher,
+          totalRedeemed: redeemed,
+          totalUsed: used,
+          outstanding
+        };
+      })
+  );
+
+  return campaigns.filter((voucher) => voucher.outstanding > 0n);
 }

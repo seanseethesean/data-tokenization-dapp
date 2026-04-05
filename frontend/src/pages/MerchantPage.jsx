@@ -70,8 +70,8 @@ export default function MerchantPage({ contracts, pushAlert, account, refreshNon
     <section className="space-y-4">
       <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">My Campaigns</h2>
-          <p className="mt-1 text-sm text-slate-500">Campaigns where connected merchant is assigned on-chain.</p>
+          <h2 className="text-lg font-semibold text-slate-900">Use Voucher Campaigns</h2>
+          <p className="mt-1 text-sm text-slate-500">Shows only campaigns with outstanding redeemed vouchers that still need merchant validation.</p>
         </div>
         <button
           type="button"
@@ -85,7 +85,7 @@ export default function MerchantPage({ contracts, pushAlert, account, refreshNon
 
       {sortedCampaigns.length === 0 ? (
         <article className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">
-          No merchant campaigns found for this wallet.
+          No vouchers pending merchant use for this wallet.
         </article>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -104,6 +104,7 @@ export default function MerchantPage({ contracts, pushAlert, account, refreshNon
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                 <p className="text-slate-600">Token Cost: <span className="font-medium text-slate-900">{voucher.tokenCost.toString()}</span></p>
                 <p className="text-slate-600">Remaining: <span className="font-medium text-slate-900">{voucher.remaining.toString()}</span></p>
+                <p className="text-slate-600">Outstanding Uses: <span className="font-medium text-slate-900">{(voucher.outstanding ?? 0n).toString()}</span></p>
               </div>
 
               <div className="mt-4 grid gap-2">

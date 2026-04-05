@@ -32,6 +32,8 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
 
     mapping(uint256 => Voucher) public vouchers; // voucherId => Voucher
     mapping(uint256 => mapping(address => uint256)) public redeemedCount; // voucherId => user => count redeemed, for tracking how many times each user has redeemed each voucher to enforce maxPerUser limit
+    mapping(uint256 => uint256) public totalRedeemed; // voucherId => total redeemed units minted to users
+    mapping(uint256 => uint256) public totalUsed; // voucherId => total redeemed units consumed by merchants
 
     event VoucherCreated(
         uint256 indexed voucherId,
@@ -143,6 +145,7 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         // Effects
         voucher.remaining -= 1;
         redeemedCount[voucherId][msg.sender] += 1;
+        totalRedeemed[voucherId] += 1;
         if (voucher.remaining == 0) {
             voucher.active = false;
         }
@@ -164,6 +167,7 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         require(voucherToken.balanceOf(user, voucherId) > 0, "User has no voucher");
 
         voucherToken.burn(user, voucherId, 1);
+        totalUsed[voucherId] += 1;
 
         emit VoucherUsed(voucherId, user, msg.sender, block.timestamp);
     }

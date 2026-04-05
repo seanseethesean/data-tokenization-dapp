@@ -133,6 +133,7 @@ function App() {
             {wallet.account && activeTab === "Customer" ? (
               <CustomerPage
                 account={wallet.account}
+                roleLabel={roleLabel}
                 contracts={contracts}
                 pushAlert={pushAlert}
                 refreshNonce={refreshNonce}

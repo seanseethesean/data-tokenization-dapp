@@ -3,7 +3,7 @@ import { APP_CONFIG } from "../config/contracts";
 const roleItems = [
   { key: "admin", label: "Admin", desc: "Creates vouchers, runs monthly conversions, and pause controls." },
   { key: "customer", label: "Customer", desc: "Approves DTT spend and redeems vouchers." },
-  { key: "merchant", label: "Merchant / Operator", desc: "Consumes redeemed vouchers with useVoucher." }
+  { key: "merchant", label: "Merchant", desc: "Consumes redeemed vouchers with useVoucher." }
 ];
 
 export default function RoleGuide() {

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import VoucherCard from "../components/VoucherCard";
 import { parseError, parseTxError, readCustomerSnapshot } from "../lib/contracts";
 
-export default function CustomerPage({ account, contracts, pushAlert, refreshNonce, triggerRefresh }) {
+export default function CustomerPage({ account, roleLabel, contracts, pushAlert, refreshNonce, triggerRefresh }) {
   const [loading, setLoading] = useState(false);
   const [approveBusy, setApproveBusy] = useState(false);
   const [redeemBusyId, setRedeemBusyId] = useState(null);
@@ -37,6 +37,14 @@ export default function CustomerPage({ account, contracts, pushAlert, refreshNon
   const sortedVouchers = useMemo(() => {
     return [...snapshot.vouchers].sort((a, b) => Number(a.id) - Number(b.id));
   }, [snapshot.vouchers]);
+
+  const ownedVouchers = useMemo(() => {
+    return sortedVouchers.filter((voucher) => (snapshot.ownedBalances[voucher.id] || 0n) > 0n);
+  }, [sortedVouchers, snapshot.ownedBalances]);
+
+  const redeemableVouchers = useMemo(() => {
+    return sortedVouchers.filter((voucher) => voucher.active && voucher.remaining > 0n);
+  }, [sortedVouchers]);
 
   async function approveSpending() {
     if (!contracts) return;
@@ -98,7 +106,7 @@ export default function CustomerPage({ account, contracts, pushAlert, refreshNon
         </article>
 
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">DTT Balance</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{roleLabel || "Connected Wallet"} DTT Balance</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">{snapshot.formattedBalance}</p>
         </article>
 
@@ -127,7 +135,7 @@ export default function CustomerPage({ account, contracts, pushAlert, refreshNon
 
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Voucher Catalog</h2>
+          <h2 className="text-lg font-semibold text-slate-900">My Vouchers</h2>
           <button
             type="button"
             onClick={loadCustomerData}
@@ -138,12 +146,37 @@ export default function CustomerPage({ account, contracts, pushAlert, refreshNon
           </button>
         </div>
 
-        {sortedVouchers.length === 0 ? (
-          <p className="text-sm text-slate-500">No vouchers found yet. Ask admin to create voucher campaigns.</p>
+        {ownedVouchers.length === 0 ? (
+          <p className="text-sm text-slate-500">You do not own any vouchers yet.</p>
+        ) : (
+          <div className="max-h-[320px] overflow-y-auto pr-1">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {ownedVouchers.map((voucher) => (
+                <VoucherCard
+                  key={`owned-${voucher.id}`}
+                  voucher={voucher}
+                  ownedBalance={snapshot.ownedBalances[voucher.id] || 0n}
+                  redeemBusy={redeemBusyId === voucher.id}
+                  onRedeem={redeemVoucher}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </article>
+
+      <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Voucher Catalog</h2>
+          <p className="text-xs text-slate-500">Only active campaigns with supply &gt; 0 are shown</p>
+        </div>
+
+        {redeemableVouchers.length === 0 ? (
+          <p className="text-sm text-slate-500">No redeemable vouchers right now.</p>
         ) : (
           <div className="max-h-[480px] overflow-y-auto pr-1">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {sortedVouchers.map((voucher) => (
+              {redeemableVouchers.map((voucher) => (
                 <VoucherCard
                   key={voucher.id}
                   voucher={voucher}
