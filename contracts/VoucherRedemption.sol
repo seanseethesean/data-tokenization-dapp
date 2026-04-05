@@ -2,6 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./VoucherToken.sol";
 
 interface IDataTokenBurnable {
@@ -10,8 +12,10 @@ interface IDataTokenBurnable {
 
 /// @title VoucherRedemption
 /// @notice Allows users to redeem predefined vouchers by burning DataToken.
-contract VoucherRedemption is AccessControl {
+contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
+    // DESIGN PATTERN: RBAC / AccessControl to separate manager and voucher-use operator powers.
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant REDEEMER_ROLE = keccak256("REDEEMER_ROLE");
 
     struct Voucher {
         uint256 id;
@@ -67,6 +71,7 @@ contract VoucherRedemption is AccessControl {
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MANAGER_ROLE, admin);
+        _grantRole(REDEEMER_ROLE, admin);
     }
 
     /// @notice Create a voucher users can redeem with tokens.
@@ -75,7 +80,7 @@ contract VoucherRedemption is AccessControl {
         uint256 tokenCost,
         uint256 remaining,
         uint256 maxPerUser
-    ) external onlyRole(MANAGER_ROLE) {
+    ) external onlyRole(MANAGER_ROLE) whenNotPaused {
         require(bytes(name).length > 0, "Voucher name required");
         require(tokenCost > 0, "Token cost must be > 0");
         require(remaining > 0, "Remaining must be > 0");
@@ -103,7 +108,7 @@ contract VoucherRedemption is AccessControl {
         uint256 remaining,
         uint256 maxPerUser,
         bool active
-    ) external onlyRole(MANAGER_ROLE) {
+    ) external onlyRole(MANAGER_ROLE) whenNotPaused {
         Voucher storage voucher = vouchers[voucherId];
         require(bytes(voucher.name).length > 0, "Voucher not found");
         require(bytes(name).length > 0, "Voucher name required");
@@ -121,7 +126,10 @@ contract VoucherRedemption is AccessControl {
 
     /// @notice Redeem an active voucher by burning tokenCost from caller.
     /// @dev Caller must approve this contract for at least tokenCost before redeeming.
-    function redeemVoucher(uint256 voucherId) external {
+    function redeemVoucher(uint256 voucherId) external whenNotPaused nonReentrant {
+        // DESIGN PATTERN: Checks-Effects-Interactions ordering to reduce risk around external calls.
+        // DESIGN PATTERN: ReentrancyGuard for burn/mint external interaction hardening.
+        // DESIGN PATTERN: Emergency Stop via Pausable.
         Voucher storage voucher = vouchers[voucherId];
 
         require(bytes(voucher.name).length > 0, "Voucher not found");
@@ -132,25 +140,33 @@ contract VoucherRedemption is AccessControl {
             "User redemption limit reached"
         );
 
-        dataToken.burnFrom(msg.sender, voucher.tokenCost);
-        voucherToken.mint(msg.sender, voucherId, 1);
-
         voucher.remaining -= 1;
         redeemedCount[voucherId][msg.sender] += 1;
         if (voucher.remaining == 0) {
             voucher.active = false;
         }
 
+        dataToken.burnFrom(msg.sender, voucher.tokenCost);
+        voucherToken.mint(msg.sender, voucherId, 1);
+
         emit VoucherRedeemed(voucherId, msg.sender, 1);
     }
 
-    function useVoucher(address user, uint256 voucherId) external onlyRole(MANAGER_ROLE) {
+    function useVoucher(address user, uint256 voucherId) external onlyRole(REDEEMER_ROLE) whenNotPaused nonReentrant {
         require(user != address(0), "Invalid user");
         require(voucherToken.balanceOf(user, voucherId) > 0, "User has no voucher");
 
         voucherToken.burn(user, voucherId, 1);
 
         emit VoucherUsed(voucherId, user, msg.sender, block.timestamp);
+    }
+
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
     }
 
     function getVoucher(uint256 voucherId) external view returns (Voucher memory) {
