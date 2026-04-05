@@ -1,149 +1,148 @@
 # Data Token App
 
-A student blockchain project that demonstrates a simple reward economy for data contributions.
-
-Users submit data references (for example, dataset links or IPFS URIs). Reviewers approve valid submissions, and contributors receive ERC20 reward tokens. Those tokens can then be redeemed for vouchers.
+A telco-style student blockchain project where verified unused mobile data is converted into reward tokens, and users redeem vouchers using those tokens.
 
 ## Project Overview
 
-This project combines:
+This project includes:
 
-- Solidity smart contracts (Hardhat)
-- Role-based access control (OpenZeppelin AccessControl)
-- ERC20 reward token (OpenZeppelin ERC20)
-- A minimal frontend (Vanilla HTML/CSS/JS + ethers.js + MetaMask)
+- Solidity contracts with Hardhat
+- OpenZeppelin AccessControl-based permissions
+- ERC20 utility token for rewards and payments
+- ERC1155 voucher token for redeemed voucher units
+- A plain HTML/CSS/JS frontend with ethers.js and MetaMask
 
-Main idea: create a transparent and auditable contribution-reward-redemption flow.
+Core flow:
 
-## Business Case
-
-Many projects depend on community data collection and curation, but contributors are often unpaid or rewarded inconsistently.
-
-This system proposes a lightweight model:
-
-1. Contributors submit data.
-2. Reviewers approve quality submissions.
-3. Approved work earns on-chain tokens.
-4. Tokens are redeemable for real or virtual incentives (vouchers).
-
-Possible contexts:
-
-- Campus research participation
-- Citizen science challenges
-- Open data labeling/annotation initiatives
-- Student hackathon contribution tracking
-
-## Why Decentralization Here?
-
-Decentralization is useful in this project because it provides:
-
-- Transparency: approvals, minting, and redemptions are on-chain.
-- Auditability: anyone can verify who was rewarded and when.
-- Role-based governance: reviewer/manager permissions are explicit and traceable.
-- Reduced trust assumptions: users do not need to trust hidden backend accounting.
-
-This is still a practical demo, not a fully trustless production protocol. Review actions remain human-governed through roles.
+1. Backend operator converts unused data into DataToken rewards.
+2. User redeems voucher campaigns using DataToken.
+3. Redemption mints an ERC1155 voucher token.
+4. Merchant/redeemer role consumes the voucher by burning the ERC1155 token.
 
 ## Smart Contracts
 
-### 1) DataToken
+### DataToken
 
 File: [contracts/DataToken.sol](contracts/DataToken.sol)
 
 Purpose:
 
-- ERC20 reward token (`DTT`)
-- Supports controlled minting via `MINTER_ROLE`
+- ERC20 reward and utility token (DTT)
+- Minting controlled by MINTER_ROLE
+- Supports burnFrom for spend flows
 
-Key points:
-
-- Admin receives initial supply on deployment.
-- `mint(to, amount)` can only be called by accounts/contracts with `MINTER_ROLE`.
-
-### 2) DataRewards
+### DataRewards
 
 File: [contracts/DataRewards.sol](contracts/DataRewards.sol)
 
 Purpose:
 
-- Accepts data submissions
-- Lets reviewers approve submissions and trigger token rewards
+- Converts verified unused MB into reward tokens
+- Uses integer division conversion rule based on mbPerToken
+- Prevents duplicate month processing per user
 
-Key points:
+Security/design highlights:
 
-- Users call `submitData(dataURI, rewardAmount)`.
-- Reviewers call `approveSubmission(submissionId)`.
-- On approval, contract mints reward tokens to submitter.
-- Requires `DataRewards` contract to have `MINTER_ROLE` on `DataToken`.
+- AccessControl (DEFAULT_ADMIN_ROLE, OPERATOR_ROLE)
+- Pausable emergency stop
+- ReentrancyGuard
+- Two-step delayed admin updates for reward token and conversion rate
 
-### 3) VoucherRedemption
+### VoucherToken
+
+File: [contracts/VoucherToken.sol](contracts/VoucherToken.sol)
+
+Purpose:
+
+- ERC1155 representation of redeemed voucher units
+- Uses voucherId as ERC1155 token id
+
+Roles:
+
+- MINTER_ROLE for issuing voucher units on redemption
+- BURNER_ROLE for consuming voucher units on usage
+
+### VoucherRedemption
 
 File: [contracts/VoucherRedemption.sol](contracts/VoucherRedemption.sol)
 
 Purpose:
 
-- Defines redeemable vouchers with token costs
-- Transfers user tokens to treasury during redemption
+- Manages voucher campaigns (struct-based, not NFT ownership model)
+- Burns DataToken on redemption
+- Mints one VoucherToken unit per redemption
+- Enforces campaign stock and per-user redemption limits
 
-Key points:
+Roles:
 
-- Managers create/update vouchers.
-- Users call `redeemVoucher(voucherId)`.
-- User must first approve token allowance for `VoucherRedemption`.
+- MANAGER_ROLE for campaign management
+- REDEEMER_ROLE for useVoucher operations
 
-## Contract Relationships
+## Critical Role Assignments (Required)
 
-- `DataRewards` depends on `DataToken` for minting rewards.
-- `VoucherRedemption` depends on `DataToken` for `transferFrom` during redemption.
-- `DataToken` is the central token used by both contracts.
+This is the most important setup section. If these roles are missing, the app will deploy but key actions will revert.
 
-## Local Setup Instructions
+### Required contract-to-contract grants
+
+1. DataRewards must have DataToken MINTER_ROLE
+Reason: DataRewards mints reward tokens during conversion.
+
+2. VoucherRedemption must have VoucherToken MINTER_ROLE
+Reason: VoucherRedemption mints ERC1155 voucher units on redeemVoucher.
+
+3. VoucherRedemption must have VoucherToken BURNER_ROLE
+Reason: VoucherRedemption burns ERC1155 voucher units in useVoucher.
+
+### Required operational wallet roles
+
+1. Backend conversion wallet must have DataRewards OPERATOR_ROLE
+Reason: Only OPERATOR_ROLE can call convertUnusedData.
+
+2. Voucher campaign admin wallet must have VoucherRedemption MANAGER_ROLE
+Reason: Only MANAGER_ROLE can create/update vouchers.
+
+3. Merchant or redemption-processing wallet must have VoucherRedemption REDEEMER_ROLE
+Reason: Only REDEEMER_ROLE can call useVoucher.
+
+4. Governance/admin wallet must keep DEFAULT_ADMIN_ROLE on each contract
+Reason: Needed for pause/unpause and role grants.
+
+## Failure Symptoms When Roles Are Missing
+
+- convertUnusedData reverts from token mint call: DataRewards lacks DataToken MINTER_ROLE.
+- redeemVoucher reverts on VoucherToken mint: VoucherRedemption lacks VoucherToken MINTER_ROLE.
+- useVoucher reverts on VoucherToken burn: VoucherRedemption lacks VoucherToken BURNER_ROLE.
+- Backend cannot convert data: missing OPERATOR_ROLE.
+- Merchant cannot consume voucher: missing REDEEMER_ROLE.
+
+## Local Setup
 
 ### Prerequisites
 
-- Node.js 18+ (recommended)
+- Node.js 18+
 - npm
-- MetaMask browser extension
+- MetaMask
 
-### Install dependencies
+### Install and compile
 
 ```bash
 npm install
-```
-
-### Compile contracts
-
-```bash
 npx hardhat compile
 ```
 
-### Optional: run tests
+## Deployment
 
-```bash
-npx hardhat test
-```
-
-## Deployment Steps
-
-The project includes deployment script:
+Deployment script:
 
 - [scripts/deploy.js](scripts/deploy.js)
 
-### 1) Deploy locally (Hardhat in-memory network)
+### In-memory local deploy
 
 ```bash
 npx hardhat run scripts/deploy.js
 ```
 
-This deploys:
-
-1. `DataToken`
-2. `DataRewards`
-3. `VoucherRedemption`
-
-And then grants `MINTER_ROLE` on `DataToken` to `DataRewards`.
-
-### 2) Deploy to localhost node (persistent local chain)
+### Persistent localhost deploy
 
 Terminal A:
 
@@ -157,67 +156,67 @@ Terminal B:
 npx hardhat run scripts/deploy.js --network localhost
 ```
 
-### 3) Configure frontend addresses
+The script deploys DataToken, DataRewards, VoucherToken, VoucherRedemption and grants key cross-contract roles.
 
-Copy deployment addresses into:
+## Post-Deployment Role Verification Checklist
+
+Use Hardhat console:
+
+```bash
+npx hardhat console --network localhost
+```
+
+Then verify each grant with hasRole.
+
+Example checks:
+
+```javascript
+const dataToken = await ethers.getContractAt("DataToken", "<DataTokenAddress>");
+const dataRewards = await ethers.getContractAt("DataRewards", "<DataRewardsAddress>");
+const voucherToken = await ethers.getContractAt("VoucherToken", "<VoucherTokenAddress>");
+const voucherRedemption = await ethers.getContractAt("VoucherRedemption", "<VoucherRedemptionAddress>");
+
+await dataToken.hasRole(await dataToken.MINTER_ROLE(), await dataRewards.getAddress());
+await voucherToken.hasRole(await voucherToken.MINTER_ROLE(), await voucherRedemption.getAddress());
+await voucherToken.hasRole(await voucherToken.BURNER_ROLE(), await voucherRedemption.getAddress());
+await dataRewards.hasRole(await dataRewards.OPERATOR_ROLE(), "<backendWallet>");
+await voucherRedemption.hasRole(await voucherRedemption.REDEEMER_ROLE(), "<merchantWallet>");
+```
+
+All checks should return true.
+
+## Frontend Setup
+
+Update deployed addresses in:
 
 - [frontend/contractConfig.js](frontend/contractConfig.js)
 
-Update:
-
-- `dataTokenAddress`
-- `dataRewardsAddress`
-- `voucherRedemptionAddress`
-
-### 4) Serve frontend
-
-Any static server works. Example:
+Then serve frontend:
 
 ```bash
 npx serve frontend
 ```
 
-Then open the printed URL in browser and connect MetaMask.
+## Demo Flow
 
-## Demo Flow (Suggested Presentation Sequence)
-
-1. Connect MetaMask in UI.
-2. Show wallet and current `DTT` balance.
-3. Submit a data entry with reward amount.
-4. Approve the submission as reviewer account.
-5. Show updated token balance after reward minting.
-6. Create a voucher as manager account.
-7. Approve token spending for VoucherRedemption.
-8. Redeem voucher and confirm token transfer to treasury.
-
-If using separate accounts for roles, switch MetaMask account between reviewer/manager/user based on permissions.
+1. Connect MetaMask and show DTT balance.
+2. As backend operator, run monthly conversion for a user.
+3. As manager, create a voucher campaign with supply and per-user cap.
+4. As customer, approve DataToken spend and redeem voucher.
+5. As merchant/redeemer, call useVoucher to consume the ERC1155 unit.
 
 ## Known Limitations
 
-- No off-chain verification pipeline for submitted data quality.
-- Duplicate protection uses URI hash only (basic, not semantic duplicate detection).
-- No pagination/indexing strategy for large submission volumes.
-- Voucher fulfillment is represented on-chain only; no external delivery integration.
-- Frontend is intentionally minimal and not production-hardened.
-- No advanced security features like pausable circuit-breaker or timelocked admin controls.
+- Billing month duplicate key uses strict string format (YYYY-MM), still not a full calendar oracle.
+- No full governance timelock contract; rewards config uses minimal delayed queue/apply.
+- Frontend is demo-focused and not production-hardened.
 
-## Future Extensions
+## Notes
 
-- Add backend or oracle-assisted review workflow.
-- Add richer submission metadata and category tagging.
-- Introduce staking/slashing for reviewer accountability.
-- Add voucher inventory limits and redemption windows.
-- Add analytics dashboard for total rewards and redemption stats.
-- Add unit/integration tests for full end-to-end scenario.
-- Add deployment pipeline for testnet/mainnet with verification scripts.
+This project intentionally prioritizes clarity and practical security patterns for a school demo:
 
-## Notes for Instructors and Evaluators
-
-This project is designed as a clear educational example of:
-
-- ERC20 token utility in a micro-economy
-- AccessControl-based governance
-- Multi-contract interaction patterns
-- Basic Web3 frontend integration with MetaMask and ethers.js
-
-It prioritizes clarity and demoability over production complexity.
+- RBAC
+- CEI ordering
+- ReentrancyGuard
+- Pausable emergency stop
+- Minimal delayed admin-change pattern

@@ -15,7 +15,8 @@ contract VoucherToken is ERC1155, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
-    function mint(address to, uint256 id, uint256 amount) external onlyRole(MINTER_ROLE) {
+    // define our own mint and burn functions with role restrictions, ERC1155 doesn't have built-in access control
+    function mint(address to, uint256 id, uint256 amount) external onlyRole(MINTER_ROLE) { // external so function can be called outside contract by VoucherRedemption when user redeems a voucher
         _mint(to, id, amount, "");
     }
 

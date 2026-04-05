@@ -15,7 +15,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
     // DESIGN PATTERN: RBAC / AccessControl for operational permissions.
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
-    // DESIGN PATTERN: Two-step delayed admin changes for sensitive configuration.
+    // DESIGN PATTERN: Two-step delayed admin changes for sensitive configuration
     uint256 public constant ADMIN_CHANGE_DELAY = 1 days;
 
     struct Conversion {
@@ -24,7 +24,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
         uint256 unusedMb;
         uint256 rewardAmount;
         string billingMonth;
-        string dataURI;
+        string dataURI; // proof / reference to where the unused data record came from
         uint256 timestamp;
     }
 
@@ -32,9 +32,10 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
     uint256 public nextConversionId;
     uint256 public mbPerToken;
 
-    mapping(uint256 => Conversion) public conversions;
-    mapping(bytes32 => bool) public processedMonths;
+    mapping(uint256 => Conversion) public conversions; // conversionId => Conversion
+    mapping(bytes32 => bool) public processedMonths; // user+month => bool to guard against duplicate conversions for same user and billing month
 
+    // Timelocked pending updates for reward token address and conversion rate to prevent instant admin changes without notice
     address public pendingRewardToken;
     uint256 public pendingRewardTokenExecuteAfter;
     uint256 public pendingMbPerToken;
@@ -48,7 +49,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
         string billingMonth,
         string dataURI
     );
-
+    // indexed lets you filter events by these fields when querying logs
     event RewardTokenUpdated(address indexed oldToken, address indexed newToken);
     event ConversionRateUpdated(uint256 oldMbPerToken, uint256 newMbPerToken);
     event RewardTokenUpdateQueued(address indexed pendingToken, uint256 executeAfter);
@@ -68,32 +69,25 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
 
     /// @notice Convert verified unused MB into reward tokens for one user and billing month.
     /// @dev Reward formula uses integer division and rounds down.
-    function convertUnusedData(
-        address user,
-        uint256 unusedMb,
-        string calldata billingMonth,
-        string calldata dataURI
-    )
-        external
+    function convertUnusedData(address user, uint256 unusedMb, string calldata billingMonth, string calldata dataURI) external
         onlyRole(OPERATOR_ROLE)
         whenNotPaused
         nonReentrant
-    {
-        // DESIGN PATTERN: Checks-Effects-Interactions ordering for safer external calls.
-        // DESIGN PATTERN: ReentrancyGuard for external mint call hardening.
-        // DESIGN PATTERN: Emergency Stop via Pausable.
+    { // ReentrancyGuard, Pausable, Checks-Effects-Interactions 
+        // Checks
         require(user != address(0), "Invalid user");
         require(unusedMb > 0, "Unused MB must be > 0");
         require(bytes(billingMonth).length > 0, "Billing month required");
         require(bytes(dataURI).length > 0, "Data URI required");
         require(_isValidBillingMonth(billingMonth), "Invalid billing month format");
 
-        bytes32 recordKey = keccak256(abi.encodePacked(user, billingMonth));
+        bytes32 recordKey = keccak256(abi.encodePacked(user, billingMonth)); // combine into a single key for tracking processed records
         require(!processedMonths[recordKey], "Month already processed for user"); // guard for duplicate conversions
 
-        uint256 rewardAmount = unusedMb / mbPerToken;
+        uint256 rewardAmount = unusedMb / mbPerToken; // integer division, rounds down, users only get rewards for whole tokens worth of MB to keep it simple and avoid fractional token issues
         require(rewardAmount > 0, "Reward must be > 0");
 
+        // Effects
         processedMonths[recordKey] = true;
 
         conversions[nextConversionId] = Conversion({
@@ -106,6 +100,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
             timestamp: block.timestamp
         });
 
+        // Interactions (external calls last)
         dataToken.mint(user, rewardAmount);
 
         emit DataConverted(nextConversionId, user, unusedMb, rewardAmount, billingMonth, dataURI);
@@ -113,11 +108,11 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
         nextConversionId++;
     }
 
-    /// @notice Queue reward token address update with a short safety delay.
-    function queueRewardTokenUpdate(address tokenAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @notice Queue reward token address update with a short safety delay
+    function queueRewardTokenUpdate(address tokenAddress) external onlyRole(DEFAULT_ADMIN_ROLE) { // assume you edit the datatoken contract, you deploy a new datatoken and call this function to update the address in this contract
         require(tokenAddress != address(0), "Invalid token address");
 
-        pendingRewardToken = tokenAddress;
+        pendingRewardToken = tokenAddress; // these are contract state variables
         pendingRewardTokenExecuteAfter = block.timestamp + ADMIN_CHANGE_DELAY;
 
         emit RewardTokenUpdateQueued(tokenAddress, pendingRewardTokenExecuteAfter);
@@ -171,7 +166,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-    function getConversion(uint256 conversionId) external view returns (Conversion memory) {
+    function getConversion(uint256 conversionId) external view returns (Conversion memory) { // returns a Conversion struct for a given conversionId
         return conversions[conversionId];
     }
 
