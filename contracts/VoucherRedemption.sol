@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./VoucherToken.sol";
 
 interface IDataTokenBurnable {
     function burnFrom(address account, uint256 value) external;
@@ -17,13 +18,16 @@ contract VoucherRedemption is AccessControl {
         string name;
         uint256 tokenCost;
         uint256 remaining;
+        uint256 maxPerUser;
         bool active;
     }
 
     IDataTokenBurnable public dataToken;
+    VoucherToken public voucherToken;
     uint256 public nextVoucherId;
 
     mapping(uint256 => Voucher) public vouchers;
+    mapping(uint256 => mapping(address => uint256)) public redeemedCount;
 
     event VoucherCreated(
         uint256 indexed voucherId,
@@ -43,14 +47,23 @@ contract VoucherRedemption is AccessControl {
     event VoucherRedeemed(
         uint256 indexed voucherId,
         address indexed user,
-        uint256 tokenCost
+        uint256 amount
     );
 
-    constructor(address tokenAddress, address admin) {
-        require(tokenAddress != address(0), "Invalid token address");
+    event VoucherUsed(
+        uint256 indexed voucherId,
+        address indexed user,
+        address indexed operator,
+        uint256 timestamp
+    );
+
+    constructor(address dataTokenAddress, address voucherTokenAddress, address admin) {
+        require(dataTokenAddress != address(0), "Invalid token address");
+        require(voucherTokenAddress != address(0), "Invalid voucher token address");
         require(admin != address(0), "Invalid admin");
 
-        dataToken = IDataTokenBurnable(tokenAddress);
+        dataToken = IDataTokenBurnable(dataTokenAddress);
+        voucherToken = VoucherToken(voucherTokenAddress);
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MANAGER_ROLE, admin);
@@ -60,17 +73,20 @@ contract VoucherRedemption is AccessControl {
     function createVoucher(
         string calldata name,
         uint256 tokenCost,
-        uint256 remaining
+        uint256 remaining,
+        uint256 maxPerUser
     ) external onlyRole(MANAGER_ROLE) {
         require(bytes(name).length > 0, "Voucher name required");
         require(tokenCost > 0, "Token cost must be > 0");
         require(remaining > 0, "Remaining must be > 0");
+        require(maxPerUser > 0, "maxPerUser must be > 0");
 
         vouchers[nextVoucherId] = Voucher({
             id: nextVoucherId,
             name: name,
             tokenCost: tokenCost,
             remaining: remaining,
+            maxPerUser: maxPerUser,
             active: true
         });
 
@@ -109,15 +125,30 @@ contract VoucherRedemption is AccessControl {
         require(bytes(voucher.name).length > 0, "Voucher not found");
         require(voucher.active, "Voucher inactive");
         require(voucher.remaining > 0, "Voucher out of stock");
+        require(
+            redeemedCount[voucherId][msg.sender] < voucher.maxPerUser,
+            "User redemption limit reached"
+        );
+
+        dataToken.burnFrom(msg.sender, voucher.tokenCost);
+        voucherToken.mint(msg.sender, voucherId, 1);
 
         voucher.remaining -= 1;
+        redeemedCount[voucherId][msg.sender] += 1;
         if (voucher.remaining == 0) {
             voucher.active = false;
         }
 
-        dataToken.burnFrom(msg.sender, voucher.tokenCost);
+        emit VoucherRedeemed(voucherId, msg.sender, 1);
+    }
 
-        emit VoucherRedeemed(voucherId, msg.sender, voucher.tokenCost);
+    function useVoucher(address user, uint256 voucherId) external onlyRole(MANAGER_ROLE) {
+        require(user != address(0), "Invalid user");
+        require(voucherToken.balanceOf(user, voucherId) > 0, "User has no voucher");
+
+        voucherToken.burn(user, voucherId, 1);
+
+        emit VoucherUsed(voucherId, user, msg.sender, block.timestamp);
     }
 
     function getVoucher(uint256 voucherId) external view returns (Voucher memory) {
