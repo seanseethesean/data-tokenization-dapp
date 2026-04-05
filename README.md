@@ -17,7 +17,7 @@ Core flow:
 1. Backend operator converts unused data into DataToken rewards.
 2. User redeems voucher campaigns using DataToken.
 3. Redemption mints an ERC1155 voucher token.
-4. Merchant/redeemer role consumes the voucher by burning the ERC1155 token.
+4. Assigned campaign merchant consumes the voucher by burning the ERC1155 token.
 
 ## Smart Contracts
 
@@ -76,7 +76,11 @@ Purpose:
 Roles:
 
 - MANAGER_ROLE for campaign management
-- REDEEMER_ROLE for useVoucher operations
+
+Authorization model for `useVoucher`:
+
+- Each voucher campaign stores a dedicated `merchant` address.
+- Only that merchant (or contract admin) can call `useVoucher` for that campaign.
 
 ## Critical Role Assignments (Required)
 
@@ -101,8 +105,8 @@ Reason: Only OPERATOR_ROLE can call convertUnusedData.
 2. Voucher campaign admin wallet must have VoucherRedemption MANAGER_ROLE
 Reason: Only MANAGER_ROLE can create/update vouchers.
 
-3. Merchant or redemption-processing wallet must have VoucherRedemption REDEEMER_ROLE
-Reason: Only REDEEMER_ROLE can call useVoucher.
+3. Merchant wallet must be set per voucher campaign in createVoucher(..., merchant)
+Reason: `useVoucher` authorizes per campaign merchant address.
 
 4. Governance/admin wallet must keep DEFAULT_ADMIN_ROLE on each contract
 Reason: Needed for pause/unpause and role grants.
@@ -113,7 +117,7 @@ Reason: Needed for pause/unpause and role grants.
 - redeemVoucher reverts on VoucherToken mint: VoucherRedemption lacks VoucherToken MINTER_ROLE.
 - useVoucher reverts on VoucherToken burn: VoucherRedemption lacks VoucherToken BURNER_ROLE.
 - Backend cannot convert data: missing OPERATOR_ROLE.
-- Merchant cannot consume voucher: missing REDEEMER_ROLE.
+- Merchant cannot consume voucher: connected wallet is not the campaign's assigned merchant.
 
 ## Local Setup
 
@@ -180,7 +184,10 @@ await dataToken.hasRole(await dataToken.MINTER_ROLE(), await dataRewards.getAddr
 await voucherToken.hasRole(await voucherToken.MINTER_ROLE(), await voucherRedemption.getAddress());
 await voucherToken.hasRole(await voucherToken.BURNER_ROLE(), await voucherRedemption.getAddress());
 await dataRewards.hasRole(await dataRewards.OPERATOR_ROLE(), "<backendWallet>");
-await voucherRedemption.hasRole(await voucherRedemption.REDEEMER_ROLE(), "<merchantWallet>");
+
+// Merchant check is per voucher campaign now:
+const v = await voucherRedemption.getVoucher(0);
+v.merchant.toLowerCase() === "<merchantWallet>".toLowerCase();
 ```
 
 All checks should return true.
@@ -189,21 +196,23 @@ All checks should return true.
 
 Update deployed addresses in:
 
-- [frontend/contractConfig.js](frontend/contractConfig.js)
+- [frontend/src/config/contracts.js](frontend/src/config/contracts.js)
 
-Then serve frontend:
+Then start React frontend:
 
 ```bash
-npx serve frontend
+cd frontend
+npm install
+npm run dev
 ```
 
 ## Demo Flow
 
 1. Connect MetaMask and show DTT balance.
 2. As backend operator, run monthly conversion for a user.
-3. As manager, create a voucher campaign with supply and per-user cap.
+3. As manager, create a voucher campaign with supply, per-user cap, and merchant address.
 4. As customer, approve DataToken spend and redeem voucher.
-5. As merchant/redeemer, call useVoucher to consume the ERC1155 unit.
+5. As assigned merchant for that voucher campaign, call useVoucher to consume the ERC1155 unit.
 
 ## Known Limitations
 
