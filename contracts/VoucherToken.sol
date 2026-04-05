@@ -10,8 +10,9 @@ contract VoucherToken is ERC1155, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
-    constructor(string memory baseUri) ERC1155(baseUri) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    constructor(string memory baseUri, address admin) ERC1155(baseUri) {
+        require(admin != address(0), "Invalid admin");
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
     function mint(address to, uint256 id, uint256 amount) external onlyRole(MINTER_ROLE) {

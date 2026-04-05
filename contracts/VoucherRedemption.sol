@@ -101,20 +101,22 @@ contract VoucherRedemption is AccessControl {
         string calldata name,
         uint256 tokenCost,
         uint256 remaining,
+        uint256 maxPerUser,
         bool active
     ) external onlyRole(MANAGER_ROLE) {
         Voucher storage voucher = vouchers[voucherId];
         require(bytes(voucher.name).length > 0, "Voucher not found");
         require(bytes(name).length > 0, "Voucher name required");
         require(tokenCost > 0, "Token cost must be > 0");
-        require(remaining > 0, "Remaining must be > 0");
+        require(maxPerUser > 0, "maxPerUser must be > 0");
 
         voucher.name = name;
         voucher.tokenCost = tokenCost;
         voucher.remaining = remaining;
-        voucher.active = active;
+        voucher.maxPerUser = maxPerUser;
+        voucher.active = remaining == 0 ? false : active;
 
-        emit VoucherUpdated(voucherId, name, tokenCost, remaining, active);
+        emit VoucherUpdated(voucherId, name, tokenCost, remaining, voucher.active);
     }
 
     /// @notice Redeem an active voucher by burning tokenCost from caller.
