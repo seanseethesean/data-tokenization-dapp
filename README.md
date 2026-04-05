@@ -134,34 +134,174 @@ npm install
 npx hardhat compile
 ```
 
-## Deployment
+## End-to-End Demo Setup (Step by Step)
 
-Deployment script:
+### Step 1: Open project
 
-- [scripts/deploy.js](scripts/deploy.js)
-
-### In-memory local deploy
+Open terminal at:
 
 ```bash
-npx hardhat run scripts/deploy.js
+cd /Users/seansee/Documents/GitHub/data-token-app
 ```
 
-### Persistent localhost deploy
+Install backend dependencies once:
 
-Terminal A:
+```bash
+npm install
+```
+
+### Step 2: Start local blockchain
+
+In Terminal A:
 
 ```bash
 npx hardhat node
 ```
 
-Terminal B:
+Keep this terminal running for the whole demo.
+
+### Step 3: Compile contracts
+
+In Terminal B:
+
+```bash
+npx hardhat compile
+```
+
+### Step 4: Deploy contracts to localhost
+
+In Terminal B:
 
 ```bash
 npx hardhat run scripts/deploy.js --network localhost
 ```
 
-The script deploys DataToken, DataRewards, VoucherToken, VoucherRedemption and grants key cross-contract roles.
+Copy these addresses from output:
 
+- DataToken
+- DataRewards
+- VoucherToken
+- VoucherRedemption
+
+### Step 5: Configure frontend contract addresses
+
+Open:
+
+- [frontend/src/config/contracts.js](frontend/src/config/contracts.js)
+
+Paste addresses into:
+
+- `contracts.dataToken`
+- `contracts.dataRewards`
+- `contracts.voucherToken`
+- `contracts.voucherRedemption`
+
+In the same file set demo identities:
+
+- `roleAccounts.admin`
+- `roleAccounts.customer`
+- `roleAccounts.merchant`
+
+### Step 6: Configure MetaMask network
+
+Add network:
+
+- Network name: `Hardhat Local`
+- RPC URL: `http://127.0.0.1:8545`
+- Chain ID: `31337`
+- Currency symbol: `ETH`
+
+Switch MetaMask to this network.
+
+### Step 7: Import demo wallets in MetaMask
+
+Import these test accounts (from Hardhat default node output):
+
+Admin
+
+- Address: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
+- Private key: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`
+
+Customer
+
+- Address: `0x70997970C51812dc3A010C7d01b50e0d17dc79C8`
+- Private key: `0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d`
+
+Merchant
+
+- Address: `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC`
+- Private key: `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a`
+
+### Step 8: Start React frontend
+
+In Terminal C:
+
+```bash
+cd /Users/seansee/Documents/GitHub/data-token-app/frontend
+npm install
+npm run dev
+```
+
+Open the local URL shown by Vite (usually `http://localhost:5173` or `http://localhost:5174`).
+
+### Step 9: Connect wallet in app
+
+1. Click `Connect MetaMask`.
+2. Connect at least one imported account.
+3. Switch MetaMask accounts during demo; UI updates automatically.
+4. Check role label matches your configured `roleAccounts` values.
+
+### Step 10: Run demo flow
+
+Admin account:
+
+1. Open `Admin` tab.
+2. Run monthly conversion for customer (`unusedMb`, `billingMonth`, `dataURI`).
+3. Create voucher campaign and set merchant address.
+
+Customer account:
+
+1. Switch to customer wallet in MetaMask.
+2. Open `Customer` tab.
+3. Approve DTT spend.
+4. Redeem voucher.
+
+Merchant account:
+
+1. Switch to merchant wallet in MetaMask.
+2. Open `Merchant` tab.
+3. Select campaign from `My Campaigns`.
+4. Enter customer address and click `Validate / Use Voucher`.
+5. Confirm post-use voucher balance.
+
+### Step 11: If something fails, check these first
+
+1. Wrong network:
+MetaMask must be on chainId `31337`.
+
+2. Old addresses:
+Re-deploy and repaste addresses in [frontend/src/config/contracts.js](frontend/src/config/contracts.js).
+
+3. Missing roles:
+Deploy script grants cross-contract roles automatically, but if you use non-admin operator wallet, ensure OPERATOR_ROLE is granted.
+
+4. Hardhat node restarted:
+All addresses change. Re-deploy and update frontend config.
+
+## Quick Start Commands (From Zero)
+
+```bash
+cd /Users/seansee/Documents/GitHub/data-token-app
+npm install
+npx hardhat node
+# new terminal
+npx hardhat compile
+npx hardhat run scripts/deploy.js --network localhost
+# update frontend/src/config/contracts.js with new addresses
+cd frontend
+npm install
+npm run dev
+```
 ## Post-Deployment Role Verification Checklist
 
 Use Hardhat console:
@@ -172,47 +312,23 @@ npx hardhat console --network localhost
 
 Then verify each grant with hasRole.
 
-Example checks:
-
 ```javascript
-const dataToken = await ethers.getContractAt("DataToken", "<DataTokenAddress>");
-const dataRewards = await ethers.getContractAt("DataRewards", "<DataRewardsAddress>");
-const voucherToken = await ethers.getContractAt("VoucherToken", "<VoucherTokenAddress>");
-const voucherRedemption = await ethers.getContractAt("VoucherRedemption", "<VoucherRedemptionAddress>");
+const dataToken = await ethers.getContractAt("DataToken", "0x5FbDB2315678afecb367f032d93F642f64180aa3"); // put token address
+const dataRewards = await ethers.getContractAt("DataRewards", "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"); // put data rewards address
+const voucherToken = await ethers.getContractAt("VoucherToken", "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"); // put vouchertoken address
+const voucherRedemption = await ethers.getContractAt("VoucherRedemption", "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"); // put voucherredemption address
 
 await dataToken.hasRole(await dataToken.MINTER_ROLE(), await dataRewards.getAddress());
 await voucherToken.hasRole(await voucherToken.MINTER_ROLE(), await voucherRedemption.getAddress());
 await voucherToken.hasRole(await voucherToken.BURNER_ROLE(), await voucherRedemption.getAddress());
-await dataRewards.hasRole(await dataRewards.OPERATOR_ROLE(), "<backendWallet>");
+await dataRewards.hasRole(await dataRewards.OPERATOR_ROLE(), "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"); // put admin address
 
 // Merchant check is per voucher campaign now:
 const v = await voucherRedemption.getVoucher(0);
-v.merchant.toLowerCase() === "<merchantWallet>".toLowerCase();
+v.merchant.toLowerCase() === "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC".toLowerCase(); // put merchant address
 ```
 
 All checks should return true.
-
-## Frontend Setup
-
-Update deployed addresses in:
-
-- [frontend/src/config/contracts.js](frontend/src/config/contracts.js)
-
-Then start React frontend:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Demo Flow
-
-1. Connect MetaMask and show DTT balance.
-2. As backend operator, run monthly conversion for a user.
-3. As manager, create a voucher campaign with supply, per-user cap, and merchant address.
-4. As customer, approve DataToken spend and redeem voucher.
-5. As assigned merchant for that voucher campaign, call useVoucher to consume the ERC1155 unit.
 
 ## Known Limitations
 

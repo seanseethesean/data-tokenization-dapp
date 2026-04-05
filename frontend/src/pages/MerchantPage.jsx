@@ -120,7 +120,7 @@ export default function MerchantPage({ contracts, pushAlert, account, refreshNon
                   onClick={() => handleUseVoucher(voucher.id)}
                   className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {busyId === voucher.id ? "Processing..." : "Validate / Use Voucher"}
+                  {busyId === voucher.id ? "Processing..." : "Use Voucher"}
                 </button>
               </div>
 
