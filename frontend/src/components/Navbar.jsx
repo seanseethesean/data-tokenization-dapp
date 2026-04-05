@@ -1,6 +1,6 @@
 import { shortAddress } from "../lib/wallet";
 
-const tabs = ["Customer", "Admin", "Merchant"];
+const tabs = ["Admin", "Customer", "Merchant"];
 
 export default function Navbar({ activeTab, onTabChange, walletAddress, roleLabel, onConnect, connecting }) {
   return (

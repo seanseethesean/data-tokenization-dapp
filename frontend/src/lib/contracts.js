@@ -1,3 +1,4 @@
+// frontend bridge to the smart contracts, using ethers.js to create contract instances and helper functions for common tasks like error parsing and data fetching
 import { ethers } from "ethers";
 import {
   APP_CONFIG,
@@ -31,11 +32,33 @@ export function getContracts(signerOrProvider) {
 }
 
 export function parseError(error) {
-  if (error?.shortMessage) return error.shortMessage;
-  if (error?.reason) return error.reason;
-  if (error?.info?.error?.message) return error.info.error.message;
-  if (error?.message) return error.message;
+  const candidates = [
+    error?.shortMessage,
+    error?.reason,
+    error?.info?.error?.message,
+    error?.error?.message,
+    error?.data?.message,
+    error?.message
+  ].filter(Boolean);
+
+  for (const message of candidates) {
+    const text = String(message).trim();
+    if (!text) continue;
+    return text.replace(/^execution reverted:\s*/i, "");
+  }
+
   return "Transaction failed.";
+}
+
+export function parseTxError(actionLabel, error, likelyCauses = []) {
+  const reason = parseError(error);
+  const causes = likelyCauses.filter(Boolean);
+
+  if (causes.length === 0) {
+    return `${actionLabel} failed: ${reason}`;
+  }
+
+  return `${actionLabel} failed: ${reason}. Possible cause(s): ${causes.join("; ")}.`;
 }
 
 export async function readVoucherCatalog(voucherRedemption) {

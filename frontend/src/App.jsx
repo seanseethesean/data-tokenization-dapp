@@ -9,7 +9,7 @@ import CustomerPage from "./pages/CustomerPage";
 import MerchantPage from "./pages/MerchantPage";
 
 function App() {
-  const [activeTab, setActiveTab] = useState("Customer");
+  const [activeTab, setActiveTab] = useState("Admin");
   const [wallet, setWallet] = useState({ account: "", network: null });
   const [contracts, setContracts] = useState(null);
   const [connecting, setConnecting] = useState(false);

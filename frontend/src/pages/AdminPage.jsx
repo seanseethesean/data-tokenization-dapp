@@ -4,6 +4,7 @@ import {
   grantOperatorRole,
   hasOperatorRole,
   parseError,
+  parseTxError,
   readAdminStats
 } from "../lib/contracts";
 
@@ -77,7 +78,16 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
       setConversionForm(initialConversionForm);
       triggerRefresh();
     } catch (error) {
-      pushAlert("error", "Conversion Failed", parseError(error));
+      pushAlert(
+        "error",
+        "Conversion Failed",
+        parseTxError("Monthly conversion", error, [
+          "caller wallet lacks OPERATOR_ROLE",
+          "billingMonth already processed for this user",
+          "invalid billingMonth format (expected YYYY-MM)",
+          "DataRewards is paused"
+        ])
+      );
     } finally {
       setBusy("");
     }
@@ -102,7 +112,16 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
       setCreateVoucherForm(initialCreateVoucherForm);
       triggerRefresh();
     } catch (error) {
-      pushAlert("error", "Create Voucher Failed", parseError(error));
+      pushAlert(
+        "error",
+        "Create Voucher Failed",
+        parseTxError("Create voucher campaign", error, [
+          "caller wallet lacks MANAGER_ROLE",
+          "merchant address is invalid",
+          "token cost/supply/max per user values are zero or invalid",
+          "VoucherRedemption is paused"
+        ])
+      );
     } finally {
       setBusy("");
     }
@@ -127,7 +146,16 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
       pushAlert("success", "Voucher Updated", `Voucher #${updateVoucherForm.voucherId} updated.`);
       triggerRefresh();
     } catch (error) {
-      pushAlert("error", "Update Voucher Failed", parseError(error));
+      pushAlert(
+        "error",
+        "Update Voucher Failed",
+        parseTxError("Update voucher campaign", error, [
+          "voucher ID does not exist",
+          "caller wallet lacks MANAGER_ROLE",
+          "updated supply is below current usage constraints",
+          "VoucherRedemption is paused"
+        ])
+      );
     } finally {
       setBusy("");
     }
@@ -144,7 +172,11 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
       await tx.wait();
       pushAlert("success", `${contractName} ${action} confirmed`, "State updated on-chain.");
     } catch (error) {
-      pushAlert("error", `${contractName} ${action} failed`, parseError(error));
+      pushAlert(
+        "error",
+        `${contractName} ${action} failed`,
+        parseTxError(`${contractName} ${action}`, error, ["caller wallet is not contract admin"])
+      );
     } finally {
       setBusy("");
     }
@@ -161,7 +193,11 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
       pushAlert("success", "OPERATOR_ROLE Granted", `Granted to ${roleTargetAddress}`);
       setOperatorRoleStatus(true);
     } catch (error) {
-      pushAlert("error", "Grant OPERATOR_ROLE Failed", parseError(error));
+      pushAlert(
+        "error",
+        "Grant OPERATOR_ROLE Failed",
+        parseTxError("Grant OPERATOR_ROLE", error, ["caller wallet is not DEFAULT_ADMIN_ROLE", "target address is invalid"])
+      );
     } finally {
       setBusy("");
     }
@@ -176,7 +212,11 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
       setOperatorRoleStatus(Boolean(hasRole));
       pushAlert("success", "OPERATOR_ROLE Checked", `${roleTargetAddress}: ${Boolean(hasRole)}`);
     } catch (error) {
-      pushAlert("error", "Check OPERATOR_ROLE Failed", parseError(error));
+      pushAlert(
+        "error",
+        "Check OPERATOR_ROLE Failed",
+        parseTxError("Check OPERATOR_ROLE", error, ["target address is invalid"])
+      );
     } finally {
       setBusy("");
     }
@@ -220,7 +260,7 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
             />
             <input
               className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
-              placeholder="Data URI (proof reference)"
+              placeholder="Data URI (e.g. ipfs://proofs/2026-04/customer-0xabc123.json)"
               value={conversionForm.dataURI}
               onChange={(e) => setConversionForm((s) => ({ ...s, dataURI: e.target.value }))}
               required
@@ -243,7 +283,7 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
               <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Merchant address (0x...)" value={createVoucherForm.merchant} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, merchant: e.target.value }))} required />
               <div className="grid grid-cols-3 gap-2">
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Token cost" type="number" min="1" value={createVoucherForm.tokenCost} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, tokenCost: e.target.value }))} required />
-                <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Remaining" type="number" min="1" value={createVoucherForm.remaining} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, remaining: e.target.value }))} required />
+                <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Initial Supply" type="number" min="1" value={createVoucherForm.remaining} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, remaining: e.target.value }))} required />
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Max/user" type="number" min="1" value={createVoucherForm.maxPerUser} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, maxPerUser: e.target.value }))} required />
               </div>
             </div>
@@ -259,7 +299,7 @@ export default function AdminPage({ contracts, pushAlert, refreshNonce, triggerR
               <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Voucher name" value={updateVoucherForm.name} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, name: e.target.value }))} required />
               <div className="grid grid-cols-3 gap-2">
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Token cost" type="number" min="1" value={updateVoucherForm.tokenCost} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, tokenCost: e.target.value }))} required />
-                <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Remaining" type="number" min="0" value={updateVoucherForm.remaining} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, remaining: e.target.value }))} required />
+                <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Updated Supply" type="number" min="0" value={updateVoucherForm.remaining} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, remaining: e.target.value }))} required />
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Max/user" type="number" min="1" value={updateVoucherForm.maxPerUser} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, maxPerUser: e.target.value }))} required />
               </div>
               <label className="inline-flex items-center gap-2 text-sm text-slate-700">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { parseError, readMerchantCampaigns } from "../lib/contracts";
+import { parseError, parseTxError, readMerchantCampaigns } from "../lib/contracts";
 
 export default function MerchantPage({ contracts, pushAlert, account, refreshNonce }) {
   const [busyId, setBusyId] = useState(null);
@@ -51,7 +51,16 @@ export default function MerchantPage({ contracts, pushAlert, account, refreshNon
       pushAlert("success", "Voucher Consumed", `Updated ownership balance: ${balance.toString()}`);
       await loadCampaigns();
     } catch (error) {
-      pushAlert("error", "Use Voucher Failed", parseError(error));
+      pushAlert(
+        "error",
+        "Use Voucher Failed",
+        parseTxError("Validate / use voucher", error, [
+          "customer does not hold this voucher token",
+          "connected wallet is not the assigned campaign merchant",
+          "voucher campaign was not found",
+          "VoucherRedemption is paused"
+        ])
+      );
     } finally {
       setBusyId(null);
     }
@@ -107,7 +116,7 @@ export default function MerchantPage({ contracts, pushAlert, account, refreshNon
                 />
                 <button
                   type="button"
-                  disabled={busyId === voucher.id || !voucher.active}
+                  disabled={busyId === voucher.id}
                   onClick={() => handleUseVoucher(voucher.id)}
                   className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >

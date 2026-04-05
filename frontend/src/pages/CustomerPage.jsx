@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import VoucherCard from "../components/VoucherCard";
-import { parseError, readCustomerSnapshot } from "../lib/contracts";
+import { parseError, parseTxError, readCustomerSnapshot } from "../lib/contracts";
 
 export default function CustomerPage({ account, contracts, pushAlert, refreshNonce, triggerRefresh }) {
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,15 @@ export default function CustomerPage({ account, contracts, pushAlert, refreshNon
       await tx.wait();
       pushAlert("success", "Approval Confirmed", `Approved ${approveAmount} ${snapshot.symbol}.`);
     } catch (error) {
-      pushAlert("error", "Approval Failed", parseError(error));
+      pushAlert(
+        "error",
+        "Approval Failed",
+        parseTxError("Approve DTT spending", error, [
+          "wallet rejected signature",
+          "entered amount is invalid for token decimals",
+          "wrong network selected in MetaMask"
+        ])
+      );
     } finally {
       setApproveBusy(false);
     }
@@ -66,7 +74,16 @@ export default function CustomerPage({ account, contracts, pushAlert, refreshNon
       pushAlert("success", "Voucher Redeemed", `Voucher #${voucherId} redeemed successfully.`);
       triggerRefresh();
     } catch (error) {
-      pushAlert("error", "Redeem Failed", parseError(error));
+      pushAlert(
+        "error",
+        "Redeem Failed",
+        parseTxError("Redeem voucher", error, [
+          "insufficient DTT balance or allowance",
+          "voucher is inactive or sold out",
+          "max-per-user limit reached",
+          "VoucherRedemption is paused"
+        ])
+      );
     } finally {
       setRedeemBusyId(null);
     }
