@@ -11,12 +11,11 @@ contract DataToken is ERC20, ERC20Burnable, AccessControl {
 
     event TokensMinted(address indexed to, uint256 amount, address indexed minter);
 
-    constructor(uint256 initialSupply, address admin) ERC20("DataToken", "DTT") {
+    constructor (address admin) ERC20("DataToken", "DTT") {
         require(admin != address(0), "Invalid admin"); // ensure admin is not zero address
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MINTER_ROLE, admin);
-        _mint(admin, initialSupply);
     }
 
     function decimals() public view override returns (uint8) { // Override to set decimals to 0 for whole token units for simplicity
