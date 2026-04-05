@@ -3,18 +3,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import VoucherCard from "../components/VoucherCard";
 import { parseError, parseTxError, readCustomerSnapshot } from "../lib/contracts";
 
+const emptySnapshot = {
+  symbol: "DTT",
+  decimals: 0,
+  formattedBalance: "0",
+  vouchers: [],
+  ownedBalances: {}
+};
+
 export default function CustomerPage({ account, roleLabel, contracts, pushAlert, refreshNonce, triggerRefresh }) {
   const [loading, setLoading] = useState(false);
   const [approveBusy, setApproveBusy] = useState(false);
   const [redeemBusyId, setRedeemBusyId] = useState(null);
   const [approveAmount, setApproveAmount] = useState("100");
-  const [snapshot, setSnapshot] = useState({
-    symbol: "DTT",
-    decimals: 0,
-    formattedBalance: "0",
-    vouchers: [],
-    ownedBalances: {}
-  });
+  const [snapshot, setSnapshot] = useState(emptySnapshot);
+
+  useEffect(() => {
+    // Avoid showing previous wallet data during account/chain transitions.
+    setSnapshot(emptySnapshot);
+  }, [account]);
 
   const loadCustomerData = useCallback(async () => {
     if (!account || !contracts) return;
@@ -101,7 +108,7 @@ export default function CustomerPage({ account, roleLabel, contracts, pushAlert,
     <section className="space-y-6">
       <div className="grid gap-4 lg:grid-cols-3">
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Customer Wallet</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{roleLabel || "Connected"} Wallet</p>
           <p className="mt-2 break-all text-sm font-medium text-slate-900">{account || "Not connected"}</p>
         </article>
 
@@ -147,7 +154,7 @@ export default function CustomerPage({ account, roleLabel, contracts, pushAlert,
         </div>
 
         {ownedVouchers.length === 0 ? (
-          <p className="text-sm text-slate-500">You do not own any vouchers yet.</p>
+          <p className="text-sm text-slate-500">This wallet does not own any vouchers yet.</p>
         ) : (
           <div className="max-h-[320px] overflow-y-auto pr-1">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
