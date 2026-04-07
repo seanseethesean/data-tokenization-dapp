@@ -27,8 +27,8 @@ export default function VoucherCard({ voucher, ownedBalance, redeemBusy, onRedee
           <dd className="font-medium text-slate-900">{voucher.tokenCost.toString()} DTT</dd>
         </div>
         <div>
-          <dt className="text-slate-500">Remaining</dt>
-          <dd className="font-medium text-slate-900">{voucher.remaining.toString()}</dd>
+          <dt className="text-slate-500">Current Supply</dt>
+          <dd className="font-medium text-slate-900">{voucher.currentSupply.toString()}</dd>
         </div>
         <div>
           <dt className="text-slate-500">Max / User</dt>
@@ -42,7 +42,7 @@ export default function VoucherCard({ voucher, ownedBalance, redeemBusy, onRedee
 
       <button
         type="button"
-        disabled={redeemBusy || !voucher.active || voucher.remaining === 0n}
+        disabled={redeemBusy || !voucher.active || voucher.currentSupply === 0n}
         onClick={() => onRedeem(voucher.id)}
         className="mt-4 w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
       >

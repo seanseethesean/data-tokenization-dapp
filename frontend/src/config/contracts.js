@@ -45,14 +45,14 @@ export const VOUCHER_TOKEN_ABI = [
 ];
 
 export const VOUCHER_REDEMPTION_ABI = [
-  "function createVoucher(string name, uint256 tokenCost, uint256 remaining, uint256 maxPerUser, address merchant)",
-  "function updateVoucher(uint256 voucherId, string name, uint256 tokenCost, uint256 remaining, uint256 maxPerUser, bool active)",
+  "function createVoucher(string name, uint256 tokenCost, uint256 currentSupply, uint256 maxPerUser, address merchant)",
+  "function updateVoucher(uint256 voucherId, string name, uint256 tokenCost, uint256 currentSupply, uint256 maxPerUser, bool active)",
   "function redeemVoucher(uint256 voucherId)",
   "function useVoucher(address user, uint256 voucherId)",
   "function totalRedeemed(uint256 voucherId) view returns (uint256)",
   "function totalUsed(uint256 voucherId) view returns (uint256)",
   "function pause()",
   "function unpause()",
-  "function getVoucher(uint256 voucherId) view returns ((uint256 id, string name, uint256 tokenCost, uint256 remaining, uint256 maxPerUser, bool active, address merchant))",
+  "function getVoucher(uint256 voucherId) view returns ((uint256 id, string name, uint256 tokenCost, uint256 currentSupply, uint256 maxPerUser, bool active, address merchant))",
   "function nextVoucherId() view returns (uint256)"
 ];

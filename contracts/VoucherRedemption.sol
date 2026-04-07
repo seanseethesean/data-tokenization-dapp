@@ -20,7 +20,7 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         uint256 id;
         string name;
         uint256 tokenCost;
-        uint256 remaining;
+        uint256 currentSupply;
         uint256 maxPerUser; // to prevent abuse where one user redeems all vouchers, set a max redemption limit per user for each voucher campaign
         bool active;
         address merchant;
@@ -39,14 +39,14 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         uint256 indexed voucherId,
         string name,
         uint256 tokenCost,
-        uint256 remaining
+        uint256 currentSupply
     );
 
     event VoucherUpdated(
         uint256 indexed voucherId,
         string name,
         uint256 tokenCost,
-        uint256 remaining,
+        uint256 currentSupply,
         bool active
     );
 
@@ -79,13 +79,13 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
     function createVoucher(
         string calldata name,
         uint256 tokenCost,
-        uint256 remaining,
+        uint256 currentSupply,
         uint256 maxPerUser, // maximum number of times each user can redeem this specific voucher
         address merchant
     ) external onlyRole(MANAGER_ROLE) whenNotPaused {
         require(bytes(name).length > 0, "Voucher name required");
         require(tokenCost > 0, "Token cost must be > 0");
-        require(remaining > 0, "Remaining must be > 0");
+        require(currentSupply > 0, "Supply must be > 0");
         require(maxPerUser > 0, "maxPerUser must be > 0");
         require(merchant != address(0), "Merchant required");
 
@@ -93,13 +93,13 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
             id: nextVoucherId,
             name: name,
             tokenCost: tokenCost,
-            remaining: remaining,
+            currentSupply: currentSupply,
             maxPerUser: maxPerUser,
             active: true,
             merchant: merchant
         });
 
-        emit VoucherCreated(nextVoucherId, name, tokenCost, remaining);
+        emit VoucherCreated(nextVoucherId, name, tokenCost, currentSupply);
 
         nextVoucherId++;
     }
@@ -109,7 +109,7 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         uint256 voucherId,
         string calldata name, // only reads name e.g. "10% off coffee"
         uint256 tokenCost,
-        uint256 remaining,
+        uint256 currentSupply,
         uint256 maxPerUser,
         bool active
     ) external onlyRole(MANAGER_ROLE) whenNotPaused { // PATTERN: RBAC for manager role, Pausable for emergency stop
@@ -121,11 +121,11 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
 
         voucher.name = name;
         voucher.tokenCost = tokenCost;
-        voucher.remaining = remaining;
+        voucher.currentSupply = currentSupply;
         voucher.maxPerUser = maxPerUser;
-        voucher.active = remaining == 0 ? false : active;
+        voucher.active = currentSupply == 0 ? false : active;
 
-        emit VoucherUpdated(voucherId, name, tokenCost, remaining, voucher.active);
+        emit VoucherUpdated(voucherId, name, tokenCost, currentSupply, voucher.active);
     }
 
     /// @notice Redeem an active voucher by burning tokenCost from caller
@@ -136,17 +136,17 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         // Checks
         require(bytes(voucher.name).length > 0, "Voucher not found");
         require(voucher.active, "Voucher inactive");
-        require(voucher.remaining > 0, "Voucher out of stock");
+        require(voucher.currentSupply > 0, "Voucher out of stock");
         require(
             redeemedCount[voucherId][msg.sender] < voucher.maxPerUser, // enforce max redemption limit per user to prevent abuse where one user redeems all vouchers
             "User redemption limit reached"
         );
 
         // Effects
-        voucher.remaining -= 1;
+        voucher.currentSupply -= 1;
         redeemedCount[voucherId][msg.sender] += 1;
         totalRedeemed[voucherId] += 1;
-        if (voucher.remaining == 0) {
+        if (voucher.currentSupply == 0) {
             voucher.active = false;
         }
 

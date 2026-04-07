@@ -103,7 +103,7 @@ export default function MerchantPage({ contracts, pushAlert, account, refreshNon
 
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                 <p className="text-slate-600">Token Cost: <span className="font-medium text-slate-900">{voucher.tokenCost.toString()}</span></p>
-                <p className="text-slate-600">Remaining: <span className="font-medium text-slate-900">{voucher.remaining.toString()}</span></p>
+                <p className="text-slate-600">Current Supply: <span className="font-medium text-slate-900">{voucher.currentSupply.toString()}</span></p>
                 <p className="text-slate-600">Outstanding Uses: <span className="font-medium text-slate-900">{(voucher.outstanding ?? 0n).toString()}</span></p>
               </div>
 

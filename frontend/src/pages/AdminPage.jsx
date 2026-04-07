@@ -19,7 +19,7 @@ const initialConversionForm = {
 const initialCreateVoucherForm = {
   name: "",
   tokenCost: "",
-  remaining: "",
+  currentSupply: "",
   maxPerUser: "",
   merchant: ""
 };
@@ -28,7 +28,7 @@ const initialUpdateVoucherForm = {
   voucherId: "",
   name: "",
   tokenCost: "",
-  remaining: "",
+  currentSupply: "",
   maxPerUser: "",
   active: true
 };
@@ -128,7 +128,7 @@ export default function AdminPage({ account, contracts, pushAlert, refreshNonce,
       const tx = await contracts.voucherRedemption.createVoucher(
         createVoucherForm.name,
         BigInt(createVoucherForm.tokenCost),
-        BigInt(createVoucherForm.remaining),
+        BigInt(createVoucherForm.currentSupply),
         BigInt(createVoucherForm.maxPerUser),
         createVoucherForm.merchant
       );
@@ -163,7 +163,7 @@ export default function AdminPage({ account, contracts, pushAlert, refreshNonce,
         BigInt(updateVoucherForm.voucherId),
         updateVoucherForm.name,
         BigInt(updateVoucherForm.tokenCost),
-        BigInt(updateVoucherForm.remaining),
+        BigInt(updateVoucherForm.currentSupply),
         BigInt(updateVoucherForm.maxPerUser),
         Boolean(updateVoucherForm.active)
       );
@@ -310,7 +310,7 @@ export default function AdminPage({ account, contracts, pushAlert, refreshNonce,
               <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Merchant address (0x...)" value={createVoucherForm.merchant} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, merchant: e.target.value }))} required />
               <div className="grid grid-cols-3 gap-2">
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Token cost" type="number" min="1" value={createVoucherForm.tokenCost} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, tokenCost: e.target.value }))} required />
-                <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Initial Supply" type="number" min="1" value={createVoucherForm.remaining} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, remaining: e.target.value }))} required />
+                <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Initial Supply" type="number" min="1" value={createVoucherForm.currentSupply} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, currentSupply: e.target.value }))} required />
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Max/user" type="number" min="1" value={createVoucherForm.maxPerUser} onChange={(e) => setCreateVoucherForm((s) => ({ ...s, maxPerUser: e.target.value }))} required />
               </div>
             </div>
@@ -326,7 +326,7 @@ export default function AdminPage({ account, contracts, pushAlert, refreshNonce,
               <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Voucher name" value={updateVoucherForm.name} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, name: e.target.value }))} required />
               <div className="grid grid-cols-3 gap-2">
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Token cost" type="number" min="1" value={updateVoucherForm.tokenCost} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, tokenCost: e.target.value }))} required />
-                <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Updated Supply" type="number" min="0" value={updateVoucherForm.remaining} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, remaining: e.target.value }))} required />
+                <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Updated Supply" type="number" min="0" value={updateVoucherForm.currentSupply} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, currentSupply: e.target.value }))} required />
                 <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Max/user" type="number" min="1" value={updateVoucherForm.maxPerUser} onChange={(e) => setUpdateVoucherForm((s) => ({ ...s, maxPerUser: e.target.value }))} required />
               </div>
               <label className="inline-flex items-center gap-2 text-sm text-slate-700">

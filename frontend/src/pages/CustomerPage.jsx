@@ -50,7 +50,7 @@ export default function CustomerPage({ account, roleLabel, contracts, pushAlert,
   }, [sortedVouchers, snapshot.ownedBalances]);
 
   const redeemableVouchers = useMemo(() => {
-    return sortedVouchers.filter((voucher) => voucher.active && voucher.remaining > 0n);
+    return sortedVouchers.filter((voucher) => voucher.active && voucher.currentSupply > 0n);
   }, [sortedVouchers]);
 
   async function approveSpending() {

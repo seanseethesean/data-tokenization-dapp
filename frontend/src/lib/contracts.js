@@ -13,7 +13,7 @@ function normalizeVoucher(raw, fallbackId) {
     id: Number(raw.id ?? raw[0] ?? fallbackId),
     name: raw.name ?? raw[1] ?? "",
     tokenCost: BigInt(raw.tokenCost ?? raw[2] ?? 0),
-    remaining: BigInt(raw.remaining ?? raw[3] ?? 0),
+    currentSupply: BigInt(raw.currentSupply ?? raw[3] ?? 0),
     maxPerUser: BigInt(raw.maxPerUser ?? raw[4] ?? 0),
     active: Boolean(raw.active ?? raw[5]),
     merchant: raw.merchant ?? raw[6] ?? "0x0000000000000000000000000000000000000000"
