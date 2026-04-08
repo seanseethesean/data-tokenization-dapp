@@ -19,7 +19,7 @@ Core contracts:
 
 ## No Environment Variables Required
 
-- Test through either Remix or HardHat
+## Test through either Remix or HardHat
 
 ## 1) Test First on Remix (Step-by-Step)
 
