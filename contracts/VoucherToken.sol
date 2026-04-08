@@ -10,7 +10,7 @@ contract VoucherToken is ERC1155, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
-    constructor(string memory baseUri, address admin) ERC1155(baseUri) {
+    constructor(string memory baseUri, address admin) ERC1155(baseUri) { // allows each voucher ID to map to off-chain metadata such as voucher description, merchant details, and expiry. This improves UI display while keeping the on-chain contract lightweight.
         require(admin != address(0), "Invalid admin");
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }

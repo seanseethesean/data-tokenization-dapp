@@ -1,125 +1,96 @@
 # Data Token App
 
-A telco-style student blockchain project where verified unused mobile data is converted into reward tokens, and users redeem vouchers using those tokens.
+A telco-style blockchain demo where unused mobile data is converted into DTT rewards, users redeem vouchers with DTT, and merchants consume redeemed vouchers.
 
 ## Project Overview
 
-This project includes:
+This project contains:
 
-- Solidity contracts with Hardhat
-- OpenZeppelin AccessControl-based permissions
-- ERC20 utility token for rewards and payments
-- ERC1155 voucher token for redeemed voucher units
-- A plain HTML/CSS/JS frontend with ethers.js and MetaMask
+- Solidity smart contracts
+- Hardhat deployment/testing workflow
+- React frontend for Admin, Customer, and Merchant flows
 
-Core flow:
+Core contracts:
 
-1. Backend operator converts unused data into DataToken rewards.
-2. User redeems voucher campaigns using DataToken.
-3. Redemption mints an ERC1155 voucher token.
-4. Assigned campaign merchant consumes the voucher by burning the ERC1155 token.
+- `DataToken` (ERC20): reward/spend token
+- `DataRewards`: converts unused MB into DTT
+- `VoucherToken` (ERC1155): minted when vouchers are redeemed
+- `VoucherRedemption`: voucher campaigns, redeem, and merchant use
 
-## Smart Contracts
+## No Environment Variables Required
 
-### DataToken
+- Test through either Remix or HardHat
 
-File: [contracts/DataToken.sol](contracts/DataToken.sol)
+## 1) Test First on Remix (Step-by-Step)
 
-Purpose:
+Use this for quick contract testing before local Hardhat demo.
 
-- ERC20 reward and utility token (DTT)
-- Minting controlled by MINTER_ROLE
-- Supports burnFrom for spend flows
+### Step 1: Open Remix
 
-### DataRewards
+Go to `https://remix.ethereum.org`.
 
-File: [contracts/DataRewards.sol](contracts/DataRewards.sol)
+### Step 2: Add contract files
 
-Purpose:
+Create and paste these files under `contracts/`:
 
-- Converts verified unused MB into reward tokens
-- Uses integer division conversion rule based on mbPerToken
-- Prevents duplicate month processing per user
+- `DataToken.sol`
+- `DataRewards.sol`
+- `VoucherToken.sol`
+- `VoucherRedemption.sol`
 
-Security/design highlights:
+### Step 3: Add OpenZeppelin imports
 
-- AccessControl (DEFAULT_ADMIN_ROLE, OPERATOR_ROLE)
-- Pausable emergency stop
-- ReentrancyGuard
-- Two-step delayed admin updates for reward token and conversion rate
+In Remix File Explorer, install imports automatically when prompted, or use a workspace where OZ imports resolve.
 
-### VoucherToken
+### Step 4: Compile
 
-File: [contracts/VoucherToken.sol](contracts/VoucherToken.sol)
+In Solidity Compiler:
 
-Purpose:
+- Compiler version: `0.8.20`
+- EVM version: `cancun`
+- Compile all contracts
 
-- ERC1155 representation of redeemed voucher units
-- Uses voucherId as ERC1155 token id
+### Step 5: Deploy in order (Remix VM)
 
-Roles:
+In Deploy & Run Transactions (Remix VM):
 
-- MINTER_ROLE for issuing voucher units on redemption
-- BURNER_ROLE for consuming voucher units on usage
+1. Deploy `DataToken` with constructor arg:
+	- `admin`: your Remix account address
+2. Deploy `DataRewards` with:
+	- `tokenAddress`: DataToken address
+	- `admin`: same admin address
+	- `_mbPerToken`: `500` (or your test value)
+3. Deploy `VoucherToken` with:
+	- `baseURI`: `https://example.com/vouchers/{id}.json`
+	- `admin`: same admin address
+4. Deploy `VoucherRedemption` with:
+	- `dataTokenAddress`: DataToken address
+	- `voucherTokenAddress`: VoucherToken address
+	- `admin`: same admin address
 
-### VoucherRedemption
+### Step 6: Grant required roles
 
-File: [contracts/VoucherRedemption.sol](contracts/VoucherRedemption.sol)
+From deployed contract UIs:
 
-Purpose:
+1. On `DataToken`:
+	- get `MINTER_ROLE`
+	- call `grantRole(MINTER_ROLE, DataRewardsAddress)`
+2. On `VoucherToken`:
+	- get `MINTER_ROLE`, `BURNER_ROLE`
+	- call `grantRole(MINTER_ROLE, VoucherRedemptionAddress)`
+	- call `grantRole(BURNER_ROLE, VoucherRedemptionAddress)`
 
-- Manages voucher campaigns (struct-based, not NFT ownership model)
-- Burns DataToken on redemption
-- Mints one VoucherToken unit per redemption
-- Enforces campaign stock and per-user redemption limits
+### Step 7: Run a minimal flow
 
-Roles:
+1. In `DataRewards`, call `convertUnusedData(user, unusedMb, billingMonth, dataURI)`
+2. Confirm user DTT balance increased in `DataToken.balanceOf(user)`
+3. In `VoucherRedemption`, create campaign with merchant address
+4. User approves DTT and calls `redeemVoucher(voucherId)`
+5. Merchant calls `useVoucher(user, voucherId)`
 
-- MANAGER_ROLE for campaign management
+If all above works, your contracts are ready for Hardhat local demo.
 
-Authorization model for `useVoucher`:
-
-- Each voucher campaign stores a dedicated `merchant` address.
-- Only that merchant (or contract admin) can call `useVoucher` for that campaign.
-
-## Critical Role Assignments (Required)
-
-This is the most important setup section. If these roles are missing, the app will deploy but key actions will revert.
-
-### Required contract-to-contract grants
-
-1. DataRewards must have DataToken MINTER_ROLE
-Reason: DataRewards mints reward tokens during conversion.
-
-2. VoucherRedemption must have VoucherToken MINTER_ROLE
-Reason: VoucherRedemption mints ERC1155 voucher units on redeemVoucher.
-
-3. VoucherRedemption must have VoucherToken BURNER_ROLE
-Reason: VoucherRedemption burns ERC1155 voucher units in useVoucher.
-
-### Required operational wallet roles
-
-1. Backend conversion wallet must have DataRewards OPERATOR_ROLE
-Reason: Only OPERATOR_ROLE can call convertUnusedData.
-
-2. Voucher campaign admin wallet must have VoucherRedemption MANAGER_ROLE
-Reason: Only MANAGER_ROLE can create/update vouchers.
-
-3. Merchant wallet must be set per voucher campaign in createVoucher(..., merchant)
-Reason: `useVoucher` authorizes per campaign merchant address.
-
-4. Governance/admin wallet must keep DEFAULT_ADMIN_ROLE on each contract
-Reason: Needed for pause/unpause and role grants.
-
-## Failure Symptoms When Roles Are Missing
-
-- convertUnusedData reverts from token mint call: DataRewards lacks DataToken MINTER_ROLE.
-- redeemVoucher reverts on VoucherToken mint: VoucherRedemption lacks VoucherToken MINTER_ROLE.
-- useVoucher reverts on VoucherToken burn: VoucherRedemption lacks VoucherToken BURNER_ROLE.
-- Backend cannot convert data: missing OPERATOR_ROLE.
-- Merchant cannot consume voucher: connected wallet is not the campaign's assigned merchant.
-
-## Local Setup
+## 2) Hardhat End-to-End Demo (Current Setup)
 
 ### Prerequisites
 
@@ -127,42 +98,26 @@ Reason: Needed for pause/unpause and role grants.
 - npm
 - MetaMask
 
-### Install and compile
-
-```bash
-npm install
-npx hardhat compile
-```
-
-## End-to-End Demo Setup (Step by Step)
-
-### Step 1: Open project
-
-Open terminal at:
+### Step 1: Open project and install
 
 ```bash
 cd /Users/seansee/Documents/GitHub/data-token-app
-```
-
-Install backend dependencies once:
-
-```bash
 npm install
 ```
 
 ### Step 2: Start local blockchain
 
-In Terminal A:
+Terminal A:
 
 ```bash
 npx hardhat node
 ```
 
-Keep this terminal running for the whole demo.
+Keep it running.
 
 ### Step 3: Compile contracts
 
-In Terminal B:
+Terminal B:
 
 ```bash
 npx hardhat compile
@@ -170,7 +125,7 @@ npx hardhat compile
 
 ### Step 4: Deploy contracts to localhost
 
-In Terminal B:
+Terminal B:
 
 ```bash
 npx hardhat run scripts/deploy.js --network localhost
@@ -178,25 +133,21 @@ npx hardhat run scripts/deploy.js --network localhost
 
 Copy these addresses from output:
 
-- DataToken
-- DataRewards
-- VoucherToken
-- VoucherRedemption
+- `DataToken`
+- `DataRewards`
+- `VoucherToken`
+- `VoucherRedemption`
 
-### Step 5: Configure frontend contract addresses
+### Step 5: Configure frontend addresses
 
-Open:
-
-- [frontend/src/config/contracts.js](frontend/src/config/contracts.js)
-
-Paste addresses into:
+Update `frontend/src/config/contracts.js`:
 
 - `contracts.dataToken`
 - `contracts.dataRewards`
 - `contracts.voucherToken`
 - `contracts.voucherRedemption`
 
-In the same file set demo identities:
+Also set demo role addresses:
 
 - `roleAccounts.admin`
 - `roleAccounts.customer`
@@ -211,30 +162,13 @@ Add network:
 - Chain ID: `31337`
 - Currency symbol: `ETH`
 
-Switch MetaMask to this network.
+### Step 7: Import demo wallets
 
-### Step 7: Import demo wallets in MetaMask
+Import private keys shown by `npx hardhat node` (at least Admin, Customer, Merchant).
 
-Import these test accounts (from Hardhat default node output):
+### Step 8: Start frontend
 
-Admin
-
-- Address: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
-- Private key: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`
-
-Customer
-
-- Address: `0x70997970C51812dc3A010C7d01b50e0d17dc79C8`
-- Private key: `0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d`
-
-Merchant
-
-- Address: `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC`
-- Private key: `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a`
-
-### Step 8: Start React frontend
-
-In Terminal C:
+Terminal C:
 
 ```bash
 cd /Users/seansee/Documents/GitHub/data-token-app/frontend
@@ -242,53 +176,127 @@ npm install
 npm run dev
 ```
 
-Open the local URL shown by Vite (usually `http://localhost:5173` or `http://localhost:5174`).
+Open the local Vite URL.
 
-### Step 9: Connect wallet in app
+### Step 9: Run demo flow (Detailed, click-by-click)
 
-1. Click `Connect MetaMask`.
-2. Connect at least one imported account.
-3. Switch MetaMask accounts during demo; UI updates automatically.
-4. Check role label matches your configured `roleAccounts` values.
+Follow this exact sequence in the browser and MetaMask.
 
-### Step 10: Run demo flow
+1. Open app and connect wallet
+	- Open the Vite URL from Step 8 (usually `http://localhost:5173`).
+	- In the app header, click `Connect MetaMask`.
+	- In MetaMask popup:
+		- choose the account you want to connect,
+		- click `Next`,
+		- click `Connect`.
+	- Confirm wallet status in app header:
+		- wallet is no longer `Not connected`,
+		- role label appears under wallet (Admin/Customer/Merchant depending on account address).
 
-Admin account:
+2. Verify correct chain before every action
+	- In MetaMask, ensure network is `Hardhat Local` (chainId `31337`).
+	- If MetaMask is on another chain, switch to `Hardhat Local` first.
+	- If you get transaction errors, re-check this before retrying.
 
-1. Open `Admin` tab.
-2. Run monthly conversion for customer (`unusedMb`, `billingMonth`, `dataURI`).
-3. Create voucher campaign and set merchant address.
+3. Admin flow: run monthly conversion
+	- In MetaMask, switch to your Admin account.
+	- In app top navigation, click `Admin` tab.
+	- In `Run Monthly Conversion` card, fill:
+		- `Customer wallet address`: paste Customer address.
+		- `Unused MB`: example `1500`.
+		- `Billing month`: example `2026-04` (format must be `YYYY-MM`).
+		- `Data URI`: example `ipfs://proofs/2026-04/customer-001.json`.
+	- Click `Run Conversion`.
+	- MetaMask popup appears:
+		- click `Confirm`.
+	- Wait for success in app Console Log (left panel):
+		- `Conversion Submitted`, then
+		- `Conversion Confirmed` with minted reward details.
 
-Customer account:
+4. Admin flow: create voucher campaign
+	- Stay on `Admin` tab.
+	- In `Create Voucher Campaign` card, fill:
+		- `Voucher name`: example `5GB Booster`.
+		- `Merchant address (0x...)`: paste Merchant address.
+		- `Token cost`: example `2`.
+		- `Initial Supply`: example `100`.
+		- `Max/user`: example `2`.
+	- Click `Create Voucher`.
+	- MetaMask popup:
+		- click `Confirm`.
+	- Wait for Console Log success:
+		- `Create Voucher Submitted`, then
+		- `Voucher Created`.
+	- Note the created voucher ID (first one is usually ID `0`, then increments).
 
-1. Switch to customer wallet in MetaMask.
-2. Open `Customer` tab.
-3. Approve DTT spend.
-4. Redeem voucher.
+5. Customer flow: approve DTT spend
+	- In MetaMask, switch to Customer account.
+	- In app top navigation, click `Customer` tab.
+	- In `Approve Spend` card:
+		- enter approval amount (must be >= voucher token cost, example `100`),
+		- click `Approve`.
+	- MetaMask popup:
+		- click `Confirm`.
+	- Wait for Console Log success:
+		- `Approval Sent`, then
+		- `Approval Confirmed`.
 
-Merchant account:
+6. Customer flow: redeem voucher
+	- Still in `Customer` tab, scroll to `Voucher Catalog`.
+	- Find the active voucher created in Admin step.
+	- Click `Redeem Voucher` on that card.
+	- MetaMask popup:
+		- click `Confirm`.
+	- Wait for Console Log success:
+		- `Redeem Submitted`, then
+		- `Voucher Redeemed`.
+	- Verify ownership:
+		- in `My Vouchers`, the redeemed voucher appears,
+		- `You have:` should show at least `1`.
 
-1. Switch to merchant wallet in MetaMask.
-2. Open `Merchant` tab.
-3. Select campaign from `My Campaigns`.
-4. Enter customer address and click `Validate / Use Voucher`.
-5. Confirm post-use voucher balance.
+7. Merchant flow: consume redeemed voucher
+	- In MetaMask, switch to Merchant account.
+	- In app top navigation, click `Merchant` tab.
+	- In `Use Voucher Campaigns`, locate the same voucher.
+	- In `Customer wallet address`, paste Customer address used above.
+	- Click `Use Voucher`.
+	- MetaMask popup:
+		- click `Confirm`.
+	- Wait for Console Log success:
+		- `Voucher Use Submitted`, then
+		- `Voucher Consumed`.
+	- Verify merchant-side result:
+		- `Customer balance after use` updates (should decrease after each successful use).
 
-### Step 11: If something fails, check these first
+8. Final verification checklist
+	- Admin account successfully ran conversion and created campaign.
+	- Customer account approved DTT and redeemed voucher.
+	- Merchant account consumed voucher for that customer.
+	- Console Log shows success events for each stage with transaction hashes.
+	- No role/network errors in the final state.
 
-1. Wrong network:
-MetaMask must be on chainId `31337`.
+## Deploy Script Notes
 
-2. Old addresses:
-Re-deploy and repaste addresses in [frontend/src/config/contracts.js](frontend/src/config/contracts.js).
+`scripts/deploy.js` does the following automatically:
 
-3. Missing roles:
-Deploy script grants cross-contract roles automatically, but if you use non-admin operator wallet, ensure OPERATOR_ROLE is granted.
+- deploys all 4 contracts
+- grants `DataToken.MINTER_ROLE` to `DataRewards`
+- grants `VoucherToken.MINTER_ROLE` and `VoucherToken.BURNER_ROLE` to `VoucherRedemption`
 
-4. Hardhat node restarted:
-All addresses change. Re-deploy and update frontend config.
+No `.env` setup is required for this flow.
 
-## Quick Start Commands (From Zero)
+## Troubleshooting
+
+1. Wrong network in MetaMask:
+	- must be chainId `31337`
+2. Stale contract addresses in frontend:
+	- redeploy and paste fresh addresses in `frontend/src/config/contracts.js`
+3. Hardhat node restarted:
+	- redeploy and update frontend config again
+4. Role errors:
+	- ensure deploy script finished successfully and role grants were printed
+
+## Quick From-Zero Commands
 
 ```bash
 cd /Users/seansee/Documents/GitHub/data-token-app
@@ -297,51 +305,8 @@ npx hardhat node
 # new terminal
 npx hardhat compile
 npx hardhat run scripts/deploy.js --network localhost
-# update frontend/src/config/contracts.js with new addresses
+# update frontend/src/config/contracts.js with deployed addresses
 cd frontend
 npm install
 npm run dev
 ```
-## Post-Deployment Role Verification Checklist
-
-Use Hardhat console:
-
-```bash
-npx hardhat console --network localhost
-```
-
-Then verify each grant with hasRole.
-
-```javascript
-const dataToken = await ethers.getContractAt("DataToken", "0x5FbDB2315678afecb367f032d93F642f64180aa3"); // put token address
-const dataRewards = await ethers.getContractAt("DataRewards", "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"); // put data rewards address
-const voucherToken = await ethers.getContractAt("VoucherToken", "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"); // put vouchertoken address
-const voucherRedemption = await ethers.getContractAt("VoucherRedemption", "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"); // put voucherredemption address
-
-await dataToken.hasRole(await dataToken.MINTER_ROLE(), await dataRewards.getAddress());
-await voucherToken.hasRole(await voucherToken.MINTER_ROLE(), await voucherRedemption.getAddress());
-await voucherToken.hasRole(await voucherToken.BURNER_ROLE(), await voucherRedemption.getAddress());
-await dataRewards.hasRole(await dataRewards.OPERATOR_ROLE(), "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"); // put admin address
-
-// Merchant check is per voucher campaign now:
-const v = await voucherRedemption.getVoucher(0);
-v.merchant.toLowerCase() === "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC".toLowerCase(); // put merchant address
-```
-
-All checks should return true.
-
-## Known Limitations
-
-- Billing month duplicate key uses strict string format (YYYY-MM), still not a full calendar oracle.
-- No full governance timelock contract; rewards config uses minimal delayed queue/apply.
-- Frontend is demo-focused and not production-hardened.
-
-## Notes
-
-This project intentionally prioritizes clarity and practical security patterns for a school demo:
-
-- RBAC
-- CEI ordering
-- ReentrancyGuard
-- Pausable emergency stop
-- Minimal delayed admin-change pattern

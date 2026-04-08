@@ -44,7 +44,11 @@ export function parseError(error) {
   for (const message of candidates) {
     const text = String(message).trim();
     if (!text) continue;
-    return text.replace(/^execution reverted:\s*/i, "");
+    const normalized = text.replace(/^execution reverted:\s*/i, "");
+    if (/could not decode result data/i.test(normalized)) {
+      return "Could not decode result data. This usually means a contract address is stale for the current network, or the ABI does not match deployed bytecode.";
+    }
+    return normalized;
   }
 
   return "Transaction failed.";
