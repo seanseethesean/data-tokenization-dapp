@@ -17,9 +17,8 @@ Core contracts:
 - `VoucherToken` (ERC1155): minted when vouchers are redeemed
 - `VoucherRedemption`: voucher campaigns, redeem, and merchant use
 
-## No Environment Variables Required
-
 ## Test through either Remix or HardHat
+- No Environment Variables Required
 
 ## 1) Test First on Remix (Step-by-Step)
 
