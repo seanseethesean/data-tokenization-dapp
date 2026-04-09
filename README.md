@@ -144,7 +144,7 @@ Quick verification (optional):
 ### Step 1: Open project and install
 
 ```bash
-cd /Users/seansee/Documents/GitHub/data-token-app
+cd data-token-app
 npm install
 ```
 
@@ -214,7 +214,7 @@ Import private keys shown by `npx hardhat node` (at least Admin, Customer, Merch
 Terminal C:
 
 ```bash
-cd /Users/seansee/Documents/GitHub/data-token-app/frontend
+cd /data-token-app/frontend
 npm install
 npm run dev
 ```
@@ -342,7 +342,7 @@ No `.env` setup is required for this flow.
 ## Quick From-Zero Commands
 
 ```bash
-cd /Users/seansee/Documents/GitHub/data-token-app
+cd /data-token-app
 npm install
 npx hardhat node
 # new terminal
