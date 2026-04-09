@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./VoucherToken.sol";
 
-interface IDataTokenBurnable { // separate interface to avoid importing full DataToken 
+interface IDataTokenBurnable { // separate interface to avoid importing full DataToken, mint is in DataRewards
     function burnFrom(address account, uint256 value) external;
 }
 
@@ -63,6 +63,8 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         uint256 timestamp
     );
 
+    /// @notice Sets token contract references and grants initial admin/manager roles.
+    /// @dev Admin gets both DEFAULT_ADMIN_ROLE and MANAGER_ROLE for setup and operations.
     constructor(address dataTokenAddress, address voucherTokenAddress, address admin) {
         require(dataTokenAddress != address(0), "Invalid token address");
         require(voucherTokenAddress != address(0), "Invalid voucher token address");
@@ -76,6 +78,7 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
     }
 
     /// @notice Create a voucher users can redeem with tokens.
+    /// @dev Adds a new campaign, validates constraints, emits event, then increments ID counter.
     function createVoucher(
         string calldata name,
         uint256 tokenCost,
@@ -105,6 +108,7 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
     }
 
     /// @notice Update voucher details or disable it.
+    /// @dev Reconfigures campaign parameters; auto-disables when supply is set to zero.
     function updateVoucher(
         uint256 voucherId,
         string calldata name, // only reads name e.g. "10% off coffee"
@@ -157,6 +161,8 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         emit VoucherRedeemed(voucherId, msg.sender, 1);
     }
 
+    /// @notice Marks one voucher unit as used by burning it from the user.
+    /// @dev Only the voucher's assigned merchant can consume a user's voucher.
     function useVoucher(address user, uint256 voucherId) external whenNotPaused nonReentrant {
         Voucher storage voucher = vouchers[voucherId];
 
@@ -172,14 +178,20 @@ contract VoucherRedemption is AccessControl, Pausable, ReentrancyGuard {
         emit VoucherUsed(voucherId, user, msg.sender, block.timestamp);
     }
 
+    /// @notice Pauses voucher creation/redemption/usage flows in emergencies.
+    /// @dev Restricted to DEFAULT_ADMIN_ROLE.
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) { // only admin can pause/unpause for emergency stop
         _pause();
     }
 
+    /// @notice Resumes voucher creation/redemption/usage after a pause.
+    /// @dev Restricted to DEFAULT_ADMIN_ROLE.
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
+    /// @notice Returns voucher campaign details by voucher ID.
+    /// @dev Read-only helper for UIs and integrations.
     function getVoucher(uint256 voucherId) external view returns (Voucher memory) {
         return vouchers[voucherId];
     }

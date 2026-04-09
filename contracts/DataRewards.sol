@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-interface IDataToken {
+interface IDataToken { // minimal interface to avoid importing full DataToken contract, only need mint function for this contract, burn is in VoucherRedemption
     function mint(address to, uint256 amount) external;
 }
 
@@ -55,6 +55,8 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
     event RewardTokenUpdateQueued(address indexed pendingToken, uint256 executeAfter);
     event ConversionRateUpdateQueued(uint256 pendingMbPerToken, uint256 executeAfter);
 
+    /// @notice Configures reward token, conversion rate, and initial admin/operator roles.
+    /// @dev Admin is granted both DEFAULT_ADMIN_ROLE and OPERATOR_ROLE at deployment.
     constructor(address tokenAddress, address admin, uint256 _mbPerToken) {
         require(tokenAddress != address(0), "Invalid token address");
         require(admin != address(0), "Invalid admin");
@@ -109,6 +111,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
     }
 
     /// @notice Queue reward token address update with a short safety delay
+    /// @dev Stores pending address and unlock timestamp so change cannot be applied immediately.
     function queueRewardTokenUpdate(address tokenAddress) external onlyRole(DEFAULT_ADMIN_ROLE) { // assume you edit the datatoken contract, you deploy a new datatoken and call this function to update the address in this contract
         require(tokenAddress != address(0), "Invalid token address");
 
@@ -119,6 +122,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
     }
 
     /// @notice Apply previously queued reward token update.
+    /// @dev Enforces timelock, then swaps token address and clears pending state.
     function applyRewardTokenUpdate() external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(pendingRewardToken != address(0), "No pending token update");
         require(block.timestamp >= pendingRewardTokenExecuteAfter, "Token update still timelocked");
@@ -134,6 +138,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
     }
 
     /// @notice Queue MB-per-token conversion rate update with a short safety delay.
+    /// @dev Stores pending rate and unlock timestamp so operators can review before activation.
     function queueConversionRateUpdate(uint256 newMbPerToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newMbPerToken > 0, "Invalid conversion rate");
 
@@ -144,6 +149,7 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
     }
 
     /// @notice Apply previously queued conversion rate update.
+    /// @dev Enforces timelock, updates rate, and clears pending state.
     function applyConversionRateUpdate() external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(pendingMbPerToken > 0, "No pending rate update");
         require(block.timestamp >= pendingMbPerTokenExecuteAfter, "Rate update still timelocked");
@@ -158,18 +164,26 @@ contract DataRewards is AccessControl, Pausable, ReentrancyGuard {
         emit ConversionRateUpdated(oldMbPerToken, newMbPerToken);
     }
 
+    /// @notice Pauses conversion-related operations in emergencies.
+    /// @dev Restricted to DEFAULT_ADMIN_ROLE.
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
+    /// @notice Resumes conversion-related operations after a pause.
+    /// @dev Restricted to DEFAULT_ADMIN_ROLE.
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
+    /// @notice Returns stored conversion details by conversion ID.
+    /// @dev Read-only helper for frontends and audits.
     function getConversion(uint256 conversionId) external view returns (Conversion memory) { // returns a Conversion struct for a given conversionId
         return conversions[conversionId];
     }
 
+    /// @notice Validates billing month text in YYYY-MM format.
+    /// @dev Accepts only numeric year, a dash separator, and month values 01-12.
     function _isValidBillingMonth(string calldata billingMonth) internal pure returns (bool) { // only "2026-01" format accepted for simplicity, no need for complex date parsing
         bytes calldata b = bytes(billingMonth);
         if (b.length != 7) {
