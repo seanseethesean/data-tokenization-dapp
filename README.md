@@ -54,17 +54,17 @@ In Solidity Compiler:
 In Deploy & Run Transactions (Remix VM):
 
 1. Deploy `DataToken` with constructor arg:
-	- `admin`: your Remix account address
+	- `admin`: your Remix account address (account 1)
 2. Deploy `DataRewards` with:
-	- `tokenAddress`: DataToken address
+	- `tokenAddress`: deployed `DataToken` address
 	- `admin`: same admin address
-	- `_mbPerToken`: `500` (or your test value)
+	- `_mbPerToken`: `500`
 3. Deploy `VoucherToken` with:
 	- `baseURI`: `https://example.com/vouchers/{id}.json`
 	- `admin`: same admin address
 4. Deploy `VoucherRedemption` with:
-	- `dataTokenAddress`: DataToken address
-	- `voucherTokenAddress`: VoucherToken address
+	- `dataTokenAddress`: deployed `DataToken` address
+	- `voucherTokenAddress`: deployed `VoucherToken` address
 	- `admin`: same admin address
 
 ### Step 6: Grant required roles
@@ -72,22 +72,66 @@ In Deploy & Run Transactions (Remix VM):
 From deployed contract UIs:
 
 1. On `DataToken`:
-	- get `MINTER_ROLE`
+	- call `MINTER_ROLE()` and copy the returned role hash
 	- call `grantRole(MINTER_ROLE, DataRewardsAddress)`
 2. On `VoucherToken`:
-	- get `MINTER_ROLE`, `BURNER_ROLE`
+	- call `MINTER_ROLE()` and `BURNER_ROLE()`
 	- call `grantRole(MINTER_ROLE, VoucherRedemptionAddress)`
 	- call `grantRole(BURNER_ROLE, VoucherRedemptionAddress)`
 
+Quick verification (optional):
+	- `DataToken.hasRole(MINTER_ROLE, DataRewardsAddress)` should be `true`
+	- `VoucherToken.hasRole(MINTER_ROLE, VoucherRedemptionAddress)` should be `true`
+	- `VoucherToken.hasRole(BURNER_ROLE, VoucherRedemptionAddress)` should be `true`
+
 ### Step 7: Run a minimal flow
 
-1. In `DataRewards`, call `convertUnusedData(user, unusedMb, billingMonth, dataURI)`
-2. Confirm user DTT balance increased in `DataToken.balanceOf(user)`
-3. In `VoucherRedemption`, create campaign with merchant address
-4. User approves DTT and calls `redeemVoucher(voucherId)`
-5. Merchant calls `useVoucher(user, voucherId)`
+1. Choose test actors in Remix accounts:
+	- `admin`: account 1
+	- `customer`: account 2
+	- `merchant`: account 3
+2. As admin, call:
+	- `DataRewards.convertUnusedData(customerAddress, 10000, "2026-04", "ipfs://proofs/2026-04/customer-001.json")`
+3. Validate conversion result:
+	- `DataToken.balanceOf(customerAddress)` should be `20` (because `10000 / 500 = 20`)
+	- `DataRewards.nextConversionId()` should now be `1`
+	- `DataRewards.getConversion(0)` should show:
+		- `user = customerAddress`
+		- `unusedMb = 10000`
+		- `rewardAmount = 20`
+		- `billingMonth = "2026-04"`
+4. As admin, create voucher campaign:
+	- `VoucherRedemption.createVoucher("Starbucks", 2, 100, 4, merchantAddress)`
+5. Validate campaign creation:
+	- `VoucherRedemption.nextVoucherId()` should now be `1`
+	- `VoucherRedemption.getVoucher(0)` should show:
+		- `name = "Starbucks"`
+		- `tokenCost = 2`
+		- `currentSupply = 100`
+		- `maxPerUser = 4`
+		- `active = true`
+		- `merchant = merchantAddress`
+6. Switch to customer account and approve spend in `DataToken`:
+	- `DataToken.approve(VoucherRedemptionAddress, 2)`
+	- Important: spender must be `VoucherRedemptionAddress`, not a user/merchant wallet.
+7. Validate approval:
+	- `DataToken.allowance(customerAddress, VoucherRedemptionAddress)` should be `2`
+8. As customer, redeem voucher:
+	- `VoucherRedemption.redeemVoucher(0)`
+9. Validate redeem result:
+	- `DataToken.balanceOf(customerAddress)` should be `18` (20 minted - 2 spent)
+	- `VoucherToken.balanceOf(customerAddress, 0)` should be `1`
+	- `VoucherRedemption.totalRedeemed(0)` should be `1`
+	- `VoucherRedemption.totalUsed(0)` should be `0`
+	- `VoucherRedemption.getVoucher(0).currentSupply` should be `99`
+10. Switch to merchant account and consume voucher:
+	- `VoucherRedemption.useVoucher(customerAddress, 0)`
+11. Validate use result (final expected state):
+	- `VoucherToken.balanceOf(customerAddress, 0)` should be `0`
+	- `VoucherRedemption.totalRedeemed(0)` should remain `1`
+	- `VoucherRedemption.totalUsed(0)` should be `1`
+	- `VoucherRedemption.getVoucher(0).currentSupply` should remain `99` (using a voucher burns user ERC1155, it does not restore campaign stock)
 
-If all above works, your contracts are ready for Hardhat local demo.
 
 ## 2) Hardhat End-to-End Demo (Current Setup)
 
