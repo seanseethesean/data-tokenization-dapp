@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Wireframe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Admin Wireframe</p>
+          <h1>Data reward operations console</h1>
+          <p class="hero-copy">
+            A standalone admin dashboard for monthly conversion, voucher campaign management, and contract controls.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <button class="hero-button muted" type="button">Export activity</button>
+          <button class="hero-button" type="button">Connect admin wallet</button>
+        </div>
+      </header>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <p class="stat-label">MB Per Token</p>
+          <h2>500</h2>
+          <span>Conversion rule</span>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Next Conversion ID</p>
+          <h2>2</h2>
+          <span>DataRewards</span>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Next Voucher ID</p>
+          <h2>1</h2>
+          <span>VoucherRedemption</span>
+        </article>
+        <article class="stat-card highlight">
+          <p class="stat-label">Admin Change Delay</p>
+          <h2>1 day</h2>
+          <span>DataRewards timelock</span>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel panel-large">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Monthly rewards</p>
+              <h3>Run monthly conversion</h3>
+            </div>
+            <span class="panel-chip">Operator only</span>
+          </div>
+          <p class="panel-copy">Convert verified unused customer data into DTT rewards.</p>
+
+          <form class="form-grid">
+            <input type="text" value="0x70997970C51812dc3A010C7d01b50e0d17dc79C8" />
+            <input type="number" placeholder="Unused MB (e.g. 1490)" />
+            <input type="text" placeholder="Billing month (YYYY-MM)" />
+            <input type="text" placeholder="Data URI (proof reference)" />
+            <button class="primary-button" type="button">Run Conversion</button>
+          </form>
+
+          <div class="mini-section">
+            <div class="mini-head">
+              <h4>Conversion lookup</h4>
+              <button class="text-button" type="button">Read conversion</button>
+            </div>
+            <div class="activity-list">
+              <article class="activity-row">
+                <div>
+                  <strong>Conversion #1</strong>
+                  <span>User 0x7099...79C8 | Billing month 2026-03 | Reward 120 DTT</span>
+                </div>
+                <span class="status-pill success">Stored</span>
+              </article>
+              <article class="activity-row">
+                <div>
+                  <strong>Duplicate protection</strong>
+                  <span>One billing month can only be processed once per user</span>
+                </div>
+                <span class="status-pill warning">Rule</span>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="stack">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Voucher setup</p>
+                <h3>Create voucher campaign</h3>
+              </div>
+            </div>
+            <form class="form-grid compact">
+              <input type="text" placeholder="Voucher name" />
+              <input type="text" placeholder="Merchant address (0x...)" />
+              <div class="three-col">
+                <input type="number" placeholder="Token cost" />
+                <input type="number" placeholder="Current Supply" />
+                <input type="number" placeholder="Max/user" />
+              </div>
+              <button class="dark-button" type="button">Create Voucher</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Voucher updates</p>
+                <h3>Update voucher campaign</h3>
+              </div>
+            </div>
+            <form class="form-grid compact">
+              <input type="number" placeholder="Voucher ID" />
+              <input type="text" placeholder="Voucher name" />
+              <div class="three-col">
+                <input type="number" placeholder="Token cost" />
+                <input type="number" placeholder="Current Supply" />
+                <input type="number" placeholder="Max/user" />
+              </div>
+              <label class="toggle-row">
+                <input type="checkbox" checked />
+                <span>Active</span>
+              </label>
+              <button class="dark-button" type="button">Update Voucher</button>
+            </form>
+          </section>
+        </section>
+      </section>
+
+      <section class="bottom-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Emergency controls</p>
+              <h3>Pause or unpause contracts</h3>
+            </div>
+          </div>
+          <p class="panel-copy">Use these controls during incidents or verification failures.</p>
+          <div class="control-grid">
+            <article class="control-card">
+              <strong>DataRewards</strong>
+              <span>Monthly conversion contract</span>
+              <div class="button-row">
+                <button class="outline-button" type="button">Pause</button>
+                <button class="success-button" type="button">Unpause</button>
+              </div>
+            </article>
+            <article class="control-card">
+              <strong>VoucherRedemption</strong>
+              <span>Voucher mint and burn flow</span>
+              <div class="button-row">
+                <button class="outline-button" type="button">Pause</button>
+                <button class="success-button" type="button">Unpause</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Reward token update</p>
+              <h3>Queue reward token address</h3>
+            </div>
+            <span class="panel-chip">1 day delay</span>
+          </div>
+          <form class="form-grid compact">
+            <input type="text" placeholder="New DataToken address" />
+            <div class="button-row">
+              <button class="dark-button" type="button">Queue token update</button>
+              <button class="outline-button" type="button">Apply queued update</button>
+            </div>
+          </form>
+          <div class="queue-list">
+            <article class="queue-row">
+              <div>
+                <strong>Reward token update</strong>
+                <span>Pending address: 0x8A79...e21F</span>
+              </div>
+              <button class="outline-button" type="button">Execute after 18:42</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Conversion rate update</p>
+              <h3>Queue MB per token change</h3>
+            </div>
+            <span class="panel-chip">1 day delay</span>
+          </div>
+          <form class="form-grid compact">
+            <input type="number" placeholder="New MB per token" />
+            <div class="button-row">
+              <button class="dark-button" type="button">Queue rate update</button>
+              <button class="outline-button" type="button">Apply queued update</button>
+            </div>
+          </form>
+          <div class="queue-list">
+            <article class="queue-row">
+              <div>
+                <strong>Conversion rate update</strong>
+                <span>Pending change: 500 MB/token -> 450 MB/token</span>
+              </div>
+              <button class="outline-button" type="button">Execute after 18:42</button>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <section class="bottom-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Access control</p>
+              <h3>DataRewards roles</h3>
+            </div>
+          </div>
+          <form class="form-grid compact">
+            <input type="text" placeholder="Target wallet address" />
+            <div class="button-row">
+              <button class="dark-button" type="button">Grant OPERATOR_ROLE</button>
+              <button class="outline-button" type="button">Check OPERATOR_ROLE</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Access control</p>
+              <h3>VoucherRedemption manager</h3>
+            </div>
+          </div>
+          <form class="form-grid compact">
+            <input type="text" placeholder="Target wallet address" />
+            <div class="button-row">
+              <button class="dark-button" type="button">Grant MANAGER_ROLE</button>
+              <button class="outline-button" type="button">Check MANAGER_ROLE</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Read-only lookup</p>
+              <h3>Voucher campaign lookup</h3>
+            </div>
+          </div>
+          <form class="form-grid compact">
+            <input type="number" placeholder="Voucher ID" />
+            <button class="outline-button" type="button">Read voucher details</button>
+          </form>
+        </section>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Recent activity</p>
+            <h3>Operations timeline</h3>
+          </div>
+          <button class="text-button" type="button">Refresh feed</button>
+        </div>
+        <div class="timeline">
+          <article class="timeline-card">
+            <span class="timeline-tag green">Conversion</span>
+            <strong>Conversion #1 minted 120 DTT</strong>
+            <p>Customer 0x7099...79C8 | Billing month: 2026-03 | Proof stored in Data URI</p>
+            <time>10 minutes ago</time>
+          </article>
+          <article class="timeline-card">
+            <span class="timeline-tag dark">Voucher</span>
+            <strong>Voucher campaign #0 created</strong>
+            <p>$20 gift card | Cost: 11,300 DTT | Current Supply: 100 | Merchant assigned</p>
+            <time>32 minutes ago</time>
+          </article>
+          <article class="timeline-card">
+            <span class="timeline-tag amber">Security</span>
+            <strong>Conversion rate update queued</strong>
+            <p>Queued change from 500 MB/token to 450 MB/token with 1 day timelock</p>
+            <time>1 hour ago</time>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

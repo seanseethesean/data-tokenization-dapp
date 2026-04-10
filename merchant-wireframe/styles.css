@@ -1,0 +1,348 @@
+:root {
+  --bg: #f2f6f3;
+  --panel: #ffffff;
+  --ink: #18211c;
+  --muted: #68756d;
+  --line: #dfe7e1;
+  --green-deep: #114e41;
+  --green: #11b26a;
+  --green-soft: #e9f8ef;
+  --amber-soft: #fff4df;
+  --amber-ink: #a56a00;
+  --blue-soft: #e9f1ff;
+  --shadow: 0 20px 50px rgba(17, 33, 26, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(17, 178, 106, 0.08), transparent 26%),
+    linear-gradient(180deg, #f8fbf9 0%, #eef4f0 100%);
+  color: var(--ink);
+  font-family: "DM Sans", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.page-shell {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 36px 18px 56px;
+  display: grid;
+  gap: 22px;
+}
+
+.hero,
+.panel-head,
+.campaign-top,
+.footnote-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.hero {
+  gap: 20px;
+}
+
+.eyebrow,
+.stat-label,
+.merchant-name,
+.campaign-meta span,
+.footnote-row span {
+  color: var(--muted);
+}
+
+.eyebrow,
+.stat-label,
+.voucher-label {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.panel h3,
+.campaign-card h3,
+.stat-card h2 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.hero h1 {
+  margin-top: 8px;
+  font-size: clamp(2.3rem, 4vw, 4rem);
+  line-height: 0.95;
+}
+
+.hero-copy {
+  max-width: 720px;
+  margin: 14px 0 0;
+  color: #526158;
+  line-height: 1.6;
+}
+
+.hero-button,
+.primary-button,
+.text-button {
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.hero-button {
+  padding: 14px 18px;
+  background: var(--green-deep);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 16px 28px rgba(17, 78, 65, 0.18);
+}
+
+.stats-grid,
+.campaign-grid,
+.bottom-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.campaign-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.bottom-grid {
+  grid-template-columns: 0.95fr 1.05fr;
+}
+
+.stat-card,
+.panel,
+.campaign-card,
+.rule-card,
+.log-row {
+  border: 1px solid rgba(17, 33, 26, 0.06);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.stat-card,
+.panel,
+.campaign-card {
+  padding: 18px;
+}
+
+.stat-card h2 {
+  margin-top: 10px;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.stat-card span {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.hero-panel {
+  background:
+    radial-gradient(circle at top right, rgba(17, 178, 106, 0.08), transparent 26%),
+    #ffffff;
+}
+
+.panel-head {
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.panel h3 {
+  margin-top: 8px;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.panel-copy {
+  margin: 0;
+  color: #526158;
+  line-height: 1.55;
+}
+
+.panel-chip,
+.state-pill,
+.log-tag {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.panel-chip,
+.state-pill.active,
+.log-tag {
+  background: var(--green-soft);
+  color: #0c9255;
+}
+
+.state-pill.muted {
+  background: #edf1ee;
+  color: #5f6b64;
+}
+
+.campaign-card h3 {
+  margin-top: 6px;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.merchant-name {
+  margin: 10px 0 0;
+  font-size: 1rem;
+}
+
+.campaign-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #f8fbf9;
+  border: 1px solid var(--line);
+}
+
+.campaign-meta span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+}
+
+.campaign-meta strong {
+  font-size: 1rem;
+}
+
+.use-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.use-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.use-form label span {
+  font-size: 0.9rem;
+  color: #4d5b53;
+  font-weight: 500;
+}
+
+input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #d7e2da;
+  border-radius: 14px;
+  background: #fbfdfc;
+  color: var(--ink);
+  outline: none;
+}
+
+input::placeholder {
+  color: #9aa79f;
+}
+
+input:focus {
+  border-color: #67bd92;
+  box-shadow: 0 0 0 4px rgba(17, 178, 106, 0.1);
+}
+
+.primary-button {
+  justify-self: start;
+  padding: 13px 16px;
+  background: var(--green-deep);
+  color: white;
+  font-weight: 700;
+}
+
+.footnote-row {
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.footnote-row strong {
+  color: var(--green-deep);
+}
+
+.rules-list,
+.log-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.rule-card,
+.log-row {
+  padding: 16px;
+}
+
+.rule-card p,
+.log-row p {
+  margin: 8px 0 0;
+  color: #526158;
+  line-height: 1.55;
+}
+
+.text-button {
+  background: transparent;
+  color: #1481f6;
+  font-weight: 700;
+  padding: 0;
+}
+
+.log-tag.warning {
+  background: var(--amber-soft);
+  color: var(--amber-ink);
+}
+
+.log-row strong {
+  display: block;
+  margin-top: 10px;
+}
+
+@media (max-width: 1120px) {
+  .campaign-grid,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-shell {
+    padding: 20px 12px 42px;
+  }
+
+  .hero {
+    flex-direction: column;
+  }
+
+  .stats-grid,
+  .campaign-meta {
+    grid-template-columns: 1fr;
+  }
+}

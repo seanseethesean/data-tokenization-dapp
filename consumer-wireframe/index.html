@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Token Rewards Wireframe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="intro">
+        <p class="eyebrow">Consumer UI Wireframe</p>
+        <h1>Data token rewards mobile app</h1>
+      </section>
+
+      <section class="prototype-grid">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <section class="screen active" data-screen="home">
+              <header class="top-hero">
+                <div class="status-row">
+                  <span>1:16</span>
+                  <span>5G</span>
+                </div>
+                <div class="mobile-topbar">
+                  <div>
+                    <p class="header-label">Rewards</p>
+                    <h2>DataTokens</h2>
+                  </div>
+                  <button class="icon-button outline" type="button" data-action="wallet" aria-label="Wallet">
+                    <span>◫</span>
+                  </button>
+                </div>
+
+                <article class="balance-card balance-card-large" id="token-history-trigger" role="button" tabindex="0" aria-label="Open token history">
+                  <div class="token-mark">DT</div>
+                  <div class="balance-copy">
+                    <p class="header-label">Available token balance</p>
+                    <h2>15,304 Tokens</h2>
+                    <p>Estimated value S$30.61</p>
+                    <span>Tap to view recent monthly token rewards that have not expired</span>
+                  </div>
+                  <div class="hero-arrow">&rsaquo;</div>
+                </article>
+              </header>
+
+              <section class="content-block">
+                <article class="hero-summary">
+                  <p class="header-label">This month</p>
+                  <h3>1,200 MB unused</h3>
+                  <p>Minted as 120 DataTokens for Mar 2026 after end-of-month verification.</p>
+                  <div class="summary-stats">
+                    <div>
+                      <span>Rate</span>
+                      <strong>10 MB : 1 token</strong>
+                    </div>
+                    <div>
+                      <span>Status</span>
+                      <strong>Verified</strong>
+                    </div>
+                  </div>
+                  <div class="summary-actions">
+                    <button class="summary-button primary" type="button" data-action="month-summary">
+                      View this month's mint
+                    </button>
+                    <button class="summary-button secondary" type="button" data-action="conversion-history">
+                      View past monthly conversions
+                    </button>
+                  </div>
+                </article>
+              </section>
+
+              <section class="content-block">
+                <div class="section-head">
+                  <div>
+                    <p class="header-label">Catalogue</p>
+                    <h3>Browse categories</h3>
+                  </div>
+                  <button class="link-button" type="button" data-action="catalogue">Open</button>
+                </div>
+                <section class="category-strip" aria-label="Voucher categories">
+                  <button class="category-pill active" type="button" data-filter="all">All</button>
+                  <button class="category-pill" type="button" data-filter="shopping">Shopping</button>
+                  <button class="category-pill" type="button" data-filter="food">Food</button>
+                  <button class="category-pill" type="button" data-filter="transport">Transport</button>
+                  <button class="category-pill" type="button" data-filter="lifestyle">Lifestyle</button>
+                </section>
+              </section>
+
+              <section class="content-block">
+                <div class="section-head">
+                  <div>
+                    <p class="header-label">Featured rewards</p>
+                    <h3>Redeem your DataTokens</h3>
+                  </div>
+                  <button class="link-button" type="button" data-action="catalogue">See all</button>
+                </div>
+                <div class="featured-row" id="featured-row"></div>
+              </section>
+            </section>
+
+            <section class="screen" data-screen="catalogue">
+              <header class="list-header mobile-header">
+                <div class="list-topbar">
+                  <button class="icon-button muted" type="button" data-action="back" aria-label="Back">
+                    <span>&larr;</span>
+                  </button>
+                  <div class="mobile-title-wrap">
+                    <p class="header-label">Voucher marketplace</p>
+                    <h2 id="catalogue-title">All vouchers</h2>
+                  </div>
+                </div>
+
+                <div class="filter-bar">
+                  <div class="filter-box">
+                    <span>Category</span>
+                    <button class="filter-value" id="catalogue-category" type="button">All</button>
+                  </div>
+                  <div class="filter-box">
+                    <span>Sort and Filter</span>
+                    <button class="filter-value" type="button">Popularity</button>
+                  </div>
+                </div>
+              </header>
+
+              <section class="voucher-list" id="voucher-list"></section>
+            </section>
+
+            <section class="screen" data-screen="detail">
+              <div class="detail-hero" id="detail-hero">
+                <div class="detail-toolbar">
+                  <button class="icon-button solid" type="button" data-action="back" aria-label="Back">
+                    <span>&larr;</span>
+                  </button>
+                  <button class="icon-button solid" type="button" aria-label="Share">
+                    <span>&uarr;</span>
+                  </button>
+                </div>
+                <div class="merchant-badge" id="detail-badge"></div>
+              </div>
+
+              <section class="detail-panel">
+                <header class="detail-title">
+                  <h2 id="detail-name"></h2>
+                  <div class="detail-meta-grid">
+                    <div>
+                      <span>Tokens</span>
+                      <strong id="detail-cost"></strong>
+                    </div>
+                    <div>
+                      <span>Validity</span>
+                      <strong id="detail-validity"></strong>
+                    </div>
+                  </div>
+                </header>
+
+                <section class="copy-block">
+                  <h3>Highlight</h3>
+                  <p id="detail-highlight"></p>
+                </section>
+
+                <section class="copy-block">
+                  <h3>How redemption works</h3>
+                  <ol id="detail-steps"></ol>
+                </section>
+
+                <section class="copy-block">
+                  <h3>Terms &amp; conditions</h3>
+                  <ul id="detail-terms"></ul>
+                </section>
+              </section>
+
+            </section>
+
+            <section class="screen" data-screen="wallet">
+              <header class="wallet-header mobile-header">
+                <button class="icon-button muted" type="button" data-action="back" aria-label="Back">
+                  <span>&larr;</span>
+                </button>
+                <div class="mobile-title-wrap">
+                  <p class="header-label">Owned assets</p>
+                  <h2>My vouchers</h2>
+                </div>
+              </header>
+
+              <section class="content-block">
+                <article class="wallet-card">
+                  <div>
+                    <p class="wallet-label">Wallet status</p>
+                    <h3>2 active redemptions</h3>
+                    <p>1 Amazon voucher, 1 Coffee bundle</p>
+                  </div>
+                
+                </article>
+              </section>
+
+              <div class="owned-list" id="owned-list"></div>
+            </section>
+
+            <section class="screen" data-screen="month-summary">
+              <header class="list-header mobile-header">
+                <div class="list-topbar">
+                  <button class="icon-button muted" type="button" data-action="back" aria-label="Back">
+                    <span>&larr;</span>
+                  </button>
+                  <div class="mobile-title-wrap">
+                    <p class="header-label">Monthly mint summary</p>
+                    <h2>March 2026 conversion</h2>
+                  </div>
+                </div>
+              </header>
+
+              <section class="content-block">
+                <article class="page-summary-card">
+                  <p class="header-label">Conversion overview</p>
+                  <h3>1,200 MB unused</h3>
+                  <p>Minted as 120 DataTokens after end-of-month verification.</p>
+                </article>
+              </section>
+
+              <section class="content-block">
+                <div class="history-list page-list">
+                  <article class="history-item">
+                    <div>
+                      <strong>1,200 MB</strong>
+                      <span>Unused mobile data</span>
+                    </div>
+                    <div>
+                      <strong>120 Tokens</strong>
+                      <span>Minted at month end</span>
+                    </div>
+                    <div>
+                      <strong>10 MB : 1 token</strong>
+                      <span>Conversion rate</span>
+                    </div>
+                    <div>
+                      <strong>Verified</strong>
+                      <span>Status</span>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section class="content-block">
+                <button class="summary-button primary full-width" type="button" data-action="conversion-history">
+                  View past monthly conversions
+                </button>
+              </section>
+            </section>
+
+            <section class="screen" data-screen="conversion-history">
+              <header class="list-header mobile-header">
+                <div class="list-topbar">
+                  <button class="icon-button muted" type="button" data-action="back" aria-label="Back">
+                    <span>&larr;</span>
+                  </button>
+                  <div class="mobile-title-wrap">
+                    <p class="header-label">Recent rewards</p>
+                    <h2>Past monthly conversions</h2>
+                  </div>
+                </div>
+              </header>
+
+              <section class="content-block">
+                <p class="page-copy">These monthly rewards are still active and have not expired.</p>
+                <div class="history-list page-list" id="history-list"></div>
+              </section>
+            </section>
+
+            <footer class="detail-sticky-footer">
+              <button class="redeem-button" type="button">Redeem</button>
+            </footer>
+
+            <nav class="bottom-nav">
+              <button class="nav-item active" type="button" data-action="home">Home</button>
+              <button class="nav-item" type="button" data-action="catalogue">Catalogue</button>
+              <button class="nav-item" type="button" data-action="wallet">My Vouchers</button>
+            </nav>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

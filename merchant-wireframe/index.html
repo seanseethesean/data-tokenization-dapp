@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Merchant Wireframe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Merchant Wireframe</p>
+          <h1>Voucher validation console</h1>
+          <p class="hero-copy">
+            Merchant-facing mockup aligned to the contract flow where the assigned merchant wallet calls
+            <code>useVoucher(user, voucherId)</code> to consume a redeemed voucher.
+          </p>
+        </div>
+        <button class="hero-button" type="button">Connect merchant wallet</button>
+      </header>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <p class="stat-label">Assigned Campaigns</p>
+          <h2>3</h2>
+          <span>VoucherRedemption merchant address match</span>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Outstanding Uses</p>
+          <h2>14</h2>
+          <span>Redeemed but not yet consumed</span>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Total Used</p>
+          <h2>27</h2>
+          <span>Merchant-side voucher consumptions</span>
+        </article>
+      </section>
+
+      <section class="panel hero-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Primary action</p>
+            <h3>Use voucher</h3>
+          </div>
+          <span class="panel-chip">Assigned merchant only</span>
+        </div>
+        <p class="panel-copy">
+          Enter the customer wallet address and the voucher campaign will burn one voucher token from that user if they hold it.
+        </p>
+      </section>
+
+      <section class="campaign-grid">
+        <article class="campaign-card">
+          <div class="campaign-top">
+            <div>
+              <p class="voucher-label">Voucher #0</p>
+              <h3>$20 gift card</h3>
+              <p class="merchant-name">Amazon.sg</p>
+            </div>
+            <span class="state-pill active">Active</span>
+          </div>
+
+          <div class="campaign-meta">
+            <div>
+              <span>Token Cost</span>
+              <strong>11,300 DTT</strong>
+            </div>
+            <div>
+              <span>Remaining</span>
+              <strong>83</strong>
+            </div>
+            <div>
+              <span>Outstanding Uses</span>
+              <strong>6</strong>
+            </div>
+          </div>
+
+          <form class="use-form">
+            <label>
+              <span>Customer wallet address</span>
+              <input type="text" placeholder="0x..." />
+            </label>
+            <button class="primary-button" type="button">Use Voucher</button>
+          </form>
+
+          <div class="footnote-row">
+            <span>Customer balance after use</span>
+            <strong>0</strong>
+          </div>
+        </article>
+
+        <article class="campaign-card">
+          <div class="campaign-top">
+            <div>
+              <p class="voucher-label">Voucher #2</p>
+              <h3>$10 ride credit</h3>
+              <p class="merchant-name">MetroGo</p>
+            </div>
+            <span class="state-pill active">Active</span>
+          </div>
+
+          <div class="campaign-meta">
+            <div>
+              <span>Token Cost</span>
+              <strong>5,400 DTT</strong>
+            </div>
+            <div>
+              <span>Remaining</span>
+              <strong>41</strong>
+            </div>
+            <div>
+              <span>Outstanding Uses</span>
+              <strong>5</strong>
+            </div>
+          </div>
+
+          <form class="use-form">
+            <label>
+              <span>Customer wallet address</span>
+              <input type="text" placeholder="0x..." />
+            </label>
+            <button class="primary-button" type="button">Use Voucher</button>
+          </form>
+
+          <div class="footnote-row">
+            <span>Customer balance after use</span>
+            <strong>1</strong>
+          </div>
+        </article>
+
+        <article class="campaign-card">
+          <div class="campaign-top">
+            <div>
+              <p class="voucher-label">Voucher #4</p>
+              <h3>$5 coffee bundle</h3>
+              <p class="merchant-name">BrewLab</p>
+            </div>
+            <span class="state-pill muted">Inactive</span>
+          </div>
+
+          <div class="campaign-meta">
+            <div>
+              <span>Token Cost</span>
+              <strong>2,900 DTT</strong>
+            </div>
+            <div>
+              <span>Remaining</span>
+              <strong>0</strong>
+            </div>
+            <div>
+              <span>Outstanding Uses</span>
+              <strong>3</strong>
+            </div>
+          </div>
+
+          <form class="use-form">
+            <label>
+              <span>Customer wallet address</span>
+              <input type="text" placeholder="0x..." />
+            </label>
+            <button class="primary-button" type="button">Use Voucher</button>
+          </form>
+
+          <div class="footnote-row">
+            <span>Customer balance after use</span>
+            <strong>-</strong>
+          </div>
+        </article>
+      </section>
+
+      <section class="bottom-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Validation rules</p>
+              <h3>Contract requirements</h3>
+            </div>
+          </div>
+          <div class="rules-list">
+            <article class="rule-card">
+              <strong>Merchant authorization</strong>
+              <p>The connected wallet must equal the voucher campaign’s <code>merchant</code> address.</p>
+            </article>
+            <article class="rule-card">
+              <strong>Customer ownership</strong>
+              <p>The customer must hold at least one ERC1155 voucher token for the selected voucher ID.</p>
+            </article>
+            <article class="rule-card">
+              <strong>Contract state</strong>
+              <p><code>VoucherRedemption</code> must not be paused when the merchant uses the voucher.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Recent merchant actions</p>
+              <h3>Voucher use log</h3>
+            </div>
+            <button class="text-button" type="button">Refresh</button>
+          </div>
+          <div class="log-list">
+            <article class="log-row">
+              <span class="log-tag">Used</span>
+              <strong>Voucher #0 consumed for 0x7099...79C8</strong>
+              <p>Operator: merchant wallet | Timestamp: 8 Apr 2026 14:22</p>
+            </article>
+            <article class="log-row">
+              <span class="log-tag warning">Rejected</span>
+              <strong>Voucher #2 failed for 0x3C44...93BC</strong>
+              <p>User has no voucher balance for this voucher ID.</p>
+            </article>
+            <article class="log-row">
+              <span class="log-tag">Used</span>
+              <strong>Voucher #4 consumed for 0x90F7...9b06</strong>
+              <p>Total used incremented successfully.</p>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
